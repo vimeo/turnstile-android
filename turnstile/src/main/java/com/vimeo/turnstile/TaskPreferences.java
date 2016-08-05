@@ -61,6 +61,14 @@ public final class TaskPreferences {
         return mSharedPreferences.contains(key);
     }
 
+    public synchronized boolean getBoolean(String key, boolean defaultValue) {
+        return mSharedPreferences.getBoolean(key, defaultValue);
+    }
+
+    public synchronized void setBoolean(String key, boolean value) {
+        mSharedPreferences.edit().putBoolean(key, value).apply();
+    }
+
     /*
      * -----------------------------------------------------------------------------------------------------
      * Getters/Setters
@@ -70,11 +78,11 @@ public final class TaskPreferences {
 
     /** isPaused refers to if the queue was paused or resumed - this can be user or network driven */
     public synchronized boolean isPaused() {
-        return mSharedPreferences.getBoolean(IS_PAUSED, false);
+        return getBoolean(IS_PAUSED, false);
     }
 
     public synchronized void setIsPaused(boolean isPaused) {
-        mSharedPreferences.edit().putBoolean(IS_PAUSED, isPaused).apply();
+        setBoolean(IS_PAUSED, isPaused);
     }
 
     /**
@@ -83,12 +91,12 @@ public final class TaskPreferences {
      * This may have to switch to an enum if there are other states we'd like to account for (data only?)
      */
     public synchronized boolean wifiOnly() {
-        return mSharedPreferences.getBoolean(WIFI_ONLY, false);
+        return getBoolean(WIFI_ONLY, false);
     }
 
     public synchronized void setWifiOnly(boolean wifiOnly) {
         if (wifiOnly() != wifiOnly) {
-            mSharedPreferences.edit().putBoolean(WIFI_ONLY, wifiOnly).apply();
+            setBoolean(WIFI_ONLY, wifiOnly);
             broadcastSettingsChange();
         }
     }
