@@ -56,7 +56,7 @@ public abstract class NetworkConditions implements Conditions {
             @Override
             public void onReceive(Context ctx, Intent intent) {
                 if (mListener == null) {
-                    TaskLogger.getLogger().w("Null listener in network util extended");
+                    TaskLogger.getLogger().d("Null listener in network util extended");
                     return;
                 }
                 mListener.onConditionsChange(isConnected());
