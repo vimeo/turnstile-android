@@ -1,4 +1,4 @@
-# turnstile
+# turnstile [![Build Status](https://travis-ci.org/vimeo/turnstile-android.svg?branch=master)](https://travis-ci.org/vimeo/turnstile-android)
 Turnstile is an abstract task queue that supports long running, parallel task execution. Turnstile lets you define your own stateful tasks and manage their transition from state to state.
 
 ## Contents
