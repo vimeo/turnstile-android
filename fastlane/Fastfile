@@ -35,13 +35,14 @@ platform :android do
     sh 'touch ../local.properties'
 
     # run the tests, but dont puke everywhere until the report is printed.
+    junit_report_path = "turnstile/build/test-results/debug/TEST-*"
     begin
       gradle(
         task: "turnstile:test sample:build"
       )
     rescue => error
     begin
-      pretty_junit(file_pattern: "turnstile/build/test-results/debug/TEST-*")
+      pretty_junit(file_pattern: junit_report_path)
     rescue => error
     end
 
@@ -53,7 +54,7 @@ platform :android do
     end
 
     begin
-      pretty_junit(file_pattern: "turnstile/build/test-results/debug/TEST-*")
+      pretty_junit(file_pattern: junit_report_path)
     rescue => error
     end
 
