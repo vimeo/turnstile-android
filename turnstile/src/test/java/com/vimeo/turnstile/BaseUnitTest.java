@@ -8,7 +8,7 @@ import org.robolectric.shadows.ShadowLog;
 
 
 @RunWith(RobolectricTestRunner.class)
-@Config(constants = BuildConfig.class)
+@Config(constants = BuildConfig.class, sdk = 21)
 public abstract class BaseUnitTest {
 
     @SuppressWarnings("AssignmentToStaticFieldFromInstanceMethod")
