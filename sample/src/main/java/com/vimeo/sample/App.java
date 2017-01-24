@@ -3,7 +3,6 @@ package com.vimeo.sample;
 import android.app.Application;
 import android.content.Intent;
 
-import com.vimeo.sample.tasks.SimpleConditions;
 import com.vimeo.sample.tasks.SimpleLogger;
 import com.vimeo.sample.tasks.SimpleTaskManager;
 import com.vimeo.turnstile.BaseTaskManager;
@@ -19,7 +18,7 @@ public class App extends Application {
 
         // Inject the components we want into the TaskManager
         BaseTaskManager.Builder taskTaskManagerBuilder = new BaseTaskManager.Builder(this);
-        taskTaskManagerBuilder.withConditions(new SimpleConditions());
+//        taskTaskManagerBuilder.withConditions(new SimpleConditions());
         taskTaskManagerBuilder.withStartOnDeviceBoot(false);
 
         // We could also use the built in NetworkConditionsBasic class

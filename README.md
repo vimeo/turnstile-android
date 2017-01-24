@@ -1,4 +1,4 @@
-# turnstile
+# turnstile [![Build Status](https://travis-ci.org/vimeo/turnstile-android.svg?branch=master)](https://travis-ci.org/vimeo/turnstile-android)
 Turnstile is an abstract task queue that supports long running, parallel task execution. Turnstile lets you define your own stateful tasks and manage their transition from state to state.
 
 ## Contents
@@ -9,6 +9,8 @@ Turnstile is an abstract task queue that supports long running, parallel task ex
     - [Submodule](#submodule)
 * [How Does It Work?](#how-does-it-work)
 * [How to Use Turnstile](#how-to-use-turnstile)  
+* [Development](#development)
+    - [Manage build dependencies](#manage-build-dependencies)
 * [Contact Us](#contact-us)
     - [Found an Issue?](#found-an-issue)
     - [Want to Contribute?](#want-to-contribute)
@@ -223,10 +225,23 @@ taskManager.addTask(task, new TaskCallback() {
 
 ```
 
+## Development
+```sh
+git clone git@github.com:vimeo/turnstile-android.git
+cd turnstile-android
+bundle install
+# dev like a boss
+bundle exec fastlane test
+# commit and push like a boss
+```
+
+#### Manage build dependencies
+Aside from specifying Java dependencies in the `.gradle` files, you can use the `.travis.yml` file to specify external build depencies such as the Android SDK to compile against (see the `android.components` section).
+
 ## Contact US
 
 #### Found an Issue?
-Please file it in the git [issue tracker](https://github.com/vimeo/turnstile-android/issues).
+Please file it in the Github [issue tracker](https://github.com/vimeo/turnstile-android/issues).
 
 #### Want to Contribute?
 If you'd like to contribute, please follow our guidelines found in [CONTRIBUTING.md](CONTRIBUTING.md).

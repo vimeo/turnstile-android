@@ -1,0 +1,33 @@
+language: android
+jdk:
+  - oraclejdk8
+android:
+  components:
+  - android-23
+  - platform-tools
+  - platform-tools-preview
+  - tools
+  - build-tools-23.0.3
+  - extra-android-m2repository
+  - extra-google-google_play_services
+  - extra-google-m2repository
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+  - "$HOME/.android/build-cache"
+script:
+  - rvm install 2.2
+  - rvm use 2.2
+  - bundle install
+  - FASTLANE_SKIP_UPDATE_CHECK=1 bundle exec fastlane test
+
+# https://vimeo.slack.com/services/B3TG0UCR3
+# travis encrypt "<acct>:<token>#<channel>" --add notifications.slack.rooms
+notifications:
+  slack:
+    rooms:
+      secure: rcFtE/Lg8D8IRYIPxZIvA1opTwrFDoyf8W5rp/NcOPfwY+JShh4uDtVFzy6FIFm5mm1uXw2Fhqmk8dj4H7iKWd5B6acoof+klhVuR07fd3hEZKJEvmdwNqX0W5zLVzbCvWBEixJdKyHfkVIFNfLzzmo1nHwxpcClAasAXgh58+T51nvNZFCogxr/hkNYigbHXzrP8qd/q7kNLWd2bfu+bbmfFlIc6PWXSGo5wN0uarquvBYJYpKexlsWQPLcOktrtlDoO47VK+OpVu99IlFTx9u57TkMoTzOv4UEQW+6Um0TA+EQrLBiQAqfKgRDYJTOJGFq0BM3RivBGEMagRJOSslrXBjIfUxnlviH16e09LyXb5xc2JPCQREN0lZ6pzqxJMcuipst3Ffq+D1hgIOjHPlWHAKT0L75N/yfn3/x9eF9NVZnRUy7Ru+wxCnyIv0sgTN7Y5l4NhKP/5auCgLEgFo/PmqQGg6ZJ2FrTBuQ+CZAJvglYv2OjyCsHvdi2R7qX3eHM7E6jnkEkRTVHed6olrOEcKw9+JeOVSbBH41KwOS8Q1jAGfRYzzHKvzJdzo4kopYDYibNd5yDRVhUbyR1JYKb6rg4ZuVWQHHhbK6vpEWu0MguraikPKcjGeOg0CIDx8HRCayQ+2P4H7PFgBEst2lFH9d8qD0ex/N5Sr0YSc=

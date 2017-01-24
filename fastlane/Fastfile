@@ -34,10 +34,33 @@ platform :android do
     # gotta do some setup before running gradle
     sh 'touch ../local.properties'
 
-    gradle(
-        task: "turnstile:build sample:build"
-    )
-    pretty_junit(file_pattern: "turnstile/build/test-results/**/TEST-*")
+    # run the tests, but dont puke everywhere until the report is printed.
+    junit_report_path = "turnstile/build/test-results/debug/TEST-*"
+    begin
+      gradle(
+        task: "turnstile:test sample:build"
+      )
+    rescue => error
+    begin
+      pretty_junit(file_pattern: junit_report_path)
+    rescue => error
+    end
+
+    if is_ci
+      danger(use_bundle_exec: false)
+    end
+
+    raise error
+    end
+
+    begin
+      pretty_junit(file_pattern: junit_report_path)
+    rescue => error
+    end
+
+    if is_ci
+      danger(use_bundle_exec: false)
+    end
 
   end
 
