@@ -27,6 +27,7 @@ ext {
 }
 
 android {
+    // Please update the ".travis.yml" file "android.components" section
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
 

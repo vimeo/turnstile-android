@@ -1,4 +1,4 @@
-# turnstile
+# turnstile [![Build Status](https://travis-ci.org/vimeo/turnstile-android.svg?branch=master)](https://travis-ci.org/vimeo/turnstile-android)
 Turnstile is an abstract task queue that supports long running, parallel task execution. Turnstile lets you define your own stateful tasks and manage their transition from state to state.
 
 ## Contents
@@ -9,6 +9,8 @@ Turnstile is an abstract task queue that supports long running, parallel task ex
     - [Submodule](#submodule)
 * [How Does It Work?](#how-does-it-work)
 * [How to Use Turnstile](#how-to-use-turnstile)  
+* [Development](#development)
+    - [Manage build dependencies](#manage-build-dependencies)
 * [Contact Us](#contact-us)
     - [Found an Issue?](#found-an-issue)
     - [Want to Contribute?](#want-to-contribute)
@@ -36,7 +38,7 @@ Turnstile is an abstract task queue that supports long running, parallel task ex
 * Long running background server syncing
 
 ## Getting Started
-For a more in depth look at the usage, refer to the [example Android app](example). The example project includes implementation of all of the below features.
+For a more in depth look at the usage, refer to the [example Android app](sample). The example project includes implementation of all of the below features.
 
 #### Gradle
 Specify the dependency in your `build.gradle` file (make sure `jcenter()` is included as a repository)
@@ -223,13 +225,26 @@ taskManager.addTask(task, new TaskCallback() {
 
 ```
 
+## Development
+```sh
+git clone git@github.com:vimeo/turnstile-android.git
+cd turnstile-android
+bundle install
+# dev like a boss
+bundle exec fastlane test
+# commit and push like a boss
+```
+
+#### Manage build dependencies
+Aside from specifying Java dependencies in the `.gradle` files, you can use the `.travis.yml` file to specify external build depencies such as the Android SDK to compile against (see the `android.components` section).
+
 ## Contact US
 
 #### Found an Issue?
-Please file it in the git [issue tracker](https://github.com/vimeo/turnstile-android/issues).
+Please file it in the Github [issue tracker](https://github.com/vimeo/turnstile-android/issues).
 
 #### Want to Contribute?
-If you'd like to contribute, please follow our guidelines found in [CONTRIBUTING.md](CONTRIBUTING.md).
+If you'd like to contribute, please follow our guidelines found in [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 #### Questions?
 Tweet at us here: [@vimeoapi](https://twitter.com/vimeoapi).
