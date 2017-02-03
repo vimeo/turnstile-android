@@ -27,9 +27,8 @@ ext {
 }
 
 android {
-    // Please update the ".travis.yml" file "android.components" section
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 25 // Update .travis.yml android.components.android-*
+    buildToolsVersion "25.0.2" // Update .travis.yml android.components.build-tools-*
 
     defaultConfig {
         minSdkVersion 16
