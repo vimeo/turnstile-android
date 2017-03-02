@@ -31,7 +31,8 @@ import android.support.annotation.WorkerThread;
 
 import com.google.gson.annotations.SerializedName;
 import com.vimeo.turnstile.conditions.Conditions;
-import com.vimeo.turnstile.models.TaskError;
+import com.vimeo.turnstile.utils.TaskLogger;
+import com.vimeo.turnstile.utils.UniqueIdGenerator;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -52,7 +53,7 @@ import java.util.concurrent.Callable;
  * <p/>
  * Created by kylevenn on 2/9/16.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("unused, WeakerAccess")
 public abstract class BaseTask implements Serializable, Callable {
 
     private static final long serialVersionUID = -2051421294839668480L;

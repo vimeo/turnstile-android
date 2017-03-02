@@ -31,7 +31,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
 import com.vimeo.turnstile.BaseTask;
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;

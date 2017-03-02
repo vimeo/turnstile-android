@@ -37,7 +37,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask;
 import com.vimeo.turnstile.BaseTask.TaskState;
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.utils.TaskLogger;
 import com.vimeo.turnstile.database.SqlHelper.SqlProperty;
 
 import java.util.ArrayList;

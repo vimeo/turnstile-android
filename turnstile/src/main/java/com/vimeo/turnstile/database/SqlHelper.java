@@ -29,7 +29,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 
 /**

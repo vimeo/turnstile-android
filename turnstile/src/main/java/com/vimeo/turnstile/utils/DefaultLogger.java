@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.vimeo.turnstile;
+package com.vimeo.turnstile.utils;
 
 import android.util.Log;
 
-import com.vimeo.turnstile.TaskLogger.Logger;
+import com.vimeo.turnstile.utils.TaskLogger.Logger;
 
 /**
  * The default implementation of {@link Logger}.

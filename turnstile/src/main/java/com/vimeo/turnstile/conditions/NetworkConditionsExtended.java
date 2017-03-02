@@ -29,7 +29,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.RequiresPermission;
 
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.utils.TaskLogger;
 import com.vimeo.turnstile.TaskPreferences;
 import com.vimeo.turnstile.TaskPreferences.OnSettingsChangedListener;
 

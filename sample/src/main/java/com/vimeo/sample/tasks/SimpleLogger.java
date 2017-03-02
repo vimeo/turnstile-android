@@ -3,7 +3,7 @@ package com.vimeo.sample.tasks;
 import android.util.Log;
 
 import com.vimeo.sample.BuildConfig;
-import com.vimeo.turnstile.TaskLogger.Logger;
+import com.vimeo.turnstile.utils.TaskLogger.Logger;
 
 public class SimpleLogger implements Logger {
 

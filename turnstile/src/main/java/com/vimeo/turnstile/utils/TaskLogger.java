@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.vimeo.turnstile;
+package com.vimeo.turnstile.utils;
 
 import android.support.annotation.NonNull;
 import android.util.Log;

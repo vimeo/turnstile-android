@@ -33,7 +33,7 @@ import android.net.ConnectivityManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresPermission;
 
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 /**
  * Interface which you can implement if you want to provide a custom

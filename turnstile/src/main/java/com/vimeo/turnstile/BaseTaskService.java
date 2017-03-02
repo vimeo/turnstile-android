@@ -32,6 +32,7 @@ import android.support.annotation.Nullable;
 
 import com.vimeo.turnstile.BaseTaskManager.ManagerEventListener;
 import com.vimeo.turnstile.BaseTaskManager.TaskEventListener;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 /**
  * The sole purpose of this {@link Service} is to ensure that our application
