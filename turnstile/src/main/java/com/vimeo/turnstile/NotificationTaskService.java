@@ -201,9 +201,8 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
             // Null out this task id since we're no longer listening for it 3/2/16 [KV]
             mTaskIdToListenOn = null;
         }
-        // Remove any if one is already showing
-        mNotificationManager.cancel(mFinishedNotificationId);
-        showNotificationFinish();
+
+        showOrUpdateNotificationFinish();
         super.onTaskSuccess(task);
     }
 
@@ -276,9 +275,11 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
     }
 
     /**
-     * Shows an entirely separate notification
+     * Shows an entirely separate notification.
+     * If the notification is already showing,
+     * the current notification will be updated.
      */
-    private void showNotificationFinish() {
+    private void showOrUpdateNotificationFinish() {
         Notification.Builder builder = new Notification.Builder(this)
                 // Example: "Upload finished"
                 .setTicker(mFinishedNotificationTitleString)
