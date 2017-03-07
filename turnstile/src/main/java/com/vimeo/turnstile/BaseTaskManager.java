@@ -29,6 +29,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask.TaskStateListener;
 import com.vimeo.turnstile.TaskConstants.ManagerEvent;
 import com.vimeo.turnstile.TaskConstants.TaskEvent;
@@ -76,6 +79,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      * These variables are used by the manager
      * internally.
      */
+    @SuppressWarnings("WeakerAccess")
     public static final class Builder {
 
         @NonNull
@@ -84,21 +88,21 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         final Conditions mBuilderConditions;
         @Nullable
         Intent mBuilderNotificationIntent;
+        @NonNull
+        Gson mGson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
 
         boolean mBuilderStartOnDeviceBoot;
-
-        public Builder(@NonNull Context context) {
-            mBuilderContext = context;
-            // Set the default to be the extended network util
-            mBuilderConditions = new NetworkConditionsExtended(mBuilderContext);
-            mBuilderStartOnDeviceBoot = false;
-        }
 
         public Builder(@NonNull Context context, @NonNull Conditions conditions) {
             mBuilderContext = context;
             // Set the default to be the extended network util
             mBuilderConditions = conditions;
             mBuilderStartOnDeviceBoot = false;
+        }
+
+        public Builder(@NonNull Context context) {
+            this(context, new NetworkConditionsExtended(context));
         }
 
         @NonNull
@@ -119,6 +123,12 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         @NonNull
         public Builder withStartOnDeviceBoot(boolean startOnDeviceBoot) {
             mBuilderStartOnDeviceBoot = startOnDeviceBoot;
+            return this;
+        }
+
+        @NonNull
+        public Builder withGson(Gson gson) {
+            mGson = gson;
             return this;
         }
     }
@@ -224,7 +234,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
         // ---- Persistence ----
         // Synchronous load from SQLite. Not very performant but required for simplified in-memory cache
-        mTaskCache = new TaskCache<>(mContext, taskName, taskClass);
+        mTaskCache = new TaskCache<>(mContext, taskName, taskClass, builder.mGson);
 
         // ---- Boot Handling ----
         if (startOnDeviceBoot()) {
