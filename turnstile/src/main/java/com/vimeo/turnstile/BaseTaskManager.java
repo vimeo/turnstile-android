@@ -247,7 +247,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      *
      * @return the Service class driving the task manager.
      */
-    // TODO: Make this nullable and make it so a service isn't required for the task execution 3/2/16 [KV]
+    @Nullable
     protected abstract Class<? extends BaseTaskService> getServiceClass();
 
     /**
@@ -724,6 +724,10 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
 
     protected void startService() {
+        if(getServiceClass() == null){
+            // Don't start the service if none was provided
+            return;
+        }
         // Call this method when we know the service should be running
         // (we just added a task or we know there are unfinished tasks).
         Intent startServiceIntent = new Intent(mContext, getServiceClass());
