@@ -205,6 +205,11 @@ public abstract class BaseTask implements Serializable, Callable {
      */
     private transient int mProgress;
 
+    /**
+     * True if the task is currently running, false otherwise.
+     */
+    private transient volatile boolean mIsRunning;
+
     // ---- Task Specific Fields ----
     /**
      * Unique identifier for this task
@@ -232,8 +237,6 @@ public abstract class BaseTask implements Serializable, Callable {
      */
     @SerializedName("created_at")
     protected final long mCreatedTimeMillis;
-
-    private volatile boolean mIsRunning;
     // </editor-fold>
 
     // -----------------------------------------------------------------------------------------------------
