@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
+import com.google.gson.Gson;
 import com.vimeo.turnstile.BaseTask;
 import com.vimeo.turnstile.utils.TaskLogger;
 
@@ -75,8 +76,11 @@ public final class TaskCache<T extends BaseTask> {
     }
 
     @WorkerThread
-    public TaskCache(@NonNull Context context, @NonNull String taskName, @NonNull Class<T> taskClass) {
-        mDatabase = new TaskDatabase<>(context, taskName, taskClass);
+    public TaskCache(@NonNull Context context,
+                     @NonNull String taskName,
+                     @NonNull Class<T> taskClass,
+                     @NonNull Gson gson) {
+        mDatabase = new TaskDatabase<>(context, taskName, taskClass, gson);
         List<T> tasks = mDatabase.getTasks(null);
         for (T task : tasks) {
             mTaskMap.put(task.getId(), task);

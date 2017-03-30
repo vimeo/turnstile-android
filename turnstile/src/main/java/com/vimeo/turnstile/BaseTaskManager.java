@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
 import com.vimeo.turnstile.BaseTask.TaskStateListener;
 import com.vimeo.turnstile.TaskConstants.ManagerEvent;
 import com.vimeo.turnstile.TaskConstants.TaskEvent;
@@ -274,7 +275,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
         // ---- Persistence ----
         // Synchronous load from SQLite. Not very performant but required for simplified in-memory cache
-        mTaskCache = new TaskCache<>(mContext, taskName, taskClass);
+        mTaskCache = new TaskCache<>(mContext, taskName, taskClass, createGson());
 
         // ---- Boot Handling ----
         if (startOnDeviceBoot() && getServiceClass() != null) {
@@ -299,6 +300,15 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      */
     @Nullable
     protected abstract Class<? extends BaseTaskService> getServiceClass();
+
+    /**
+     * Create a Gson instance that will be used to serialize
+     * and deserialize your extended version of {@link BaseTask}.
+     *
+     * @return should return a non null Gson instance.
+     */
+    @NonNull
+    protected abstract Gson createGson();
 
     /**
      * The unique name used to identify this particular subclass of {@link BaseTaskManager}.

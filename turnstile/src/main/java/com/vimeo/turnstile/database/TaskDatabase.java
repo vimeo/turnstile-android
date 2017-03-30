@@ -32,13 +32,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask;
 import com.vimeo.turnstile.BaseTask.TaskState;
-import com.vimeo.turnstile.utils.TaskLogger;
 import com.vimeo.turnstile.database.SqlHelper.SqlProperty;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,16 +81,17 @@ class TaskDatabase<T extends BaseTask> {
         IO_THREAD.execute(runnable);
     }
 
-    public TaskDatabase(Context context, String name, Class<T> taskClass) {
+    public TaskDatabase(@NonNull Context context,
+                        @NonNull String name,
+                        @NonNull Class<T> taskClass,
+                        @NonNull Gson gson) {
         SqlProperty[] PROPERTIES = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
         mHelper = new DbOpenHelper(context, name, DATABASE_VERSION, ID_COLUMN, PROPERTIES);
         mDatabase = mHelper.getWritableDatabase();
         mSqlHelper = new SqlHelper(mDatabase, mHelper.getTableName(), ID_COLUMN.columnName, PROPERTIES);
 
         mTaskClass = taskClass;
-        mGsonSerializer =
-                new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                        .create();
+        mGsonSerializer = gson;
     }
 
     private void bindValues(SQLiteStatement stmt, T task) {
