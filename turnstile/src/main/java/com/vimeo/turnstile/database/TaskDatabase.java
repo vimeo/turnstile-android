@@ -49,14 +49,8 @@ import static com.vimeo.turnstile.database.TaskDatabaseOpenHelper.ID_COLUMN;
  */
 class TaskDatabase<T extends BaseTask> {
 
-    private final static String LOG_TAG = "TaskDatabase";
-
     private static final Executor IO_THREAD = Executors.newSingleThreadExecutor();
 
-    //    private final DbOpenHelper mHelper;
-//    private final SQLiteDatabase mDatabase;
-//    private final SqlHelper mSqlHelper;
-//    private final Gson mGsonSerializer;
     private final Serializer<T> mSerializer;
 
     private final TaskDatabaseOpenHelper<T> mTaskDatabase;
@@ -78,12 +72,6 @@ class TaskDatabase<T extends BaseTask> {
         mTaskDatabase = new TaskDatabaseOpenHelper<>(context, name, serializer);
 
         mSerializer = serializer;
-
-//        mSqlHelper = helper.createSqlHelper();
-
-//        mGsonSerializer =
-//                new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-//                        .create();
     }
 
 

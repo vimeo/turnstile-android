@@ -42,11 +42,13 @@ import java.io.Serializable;
 public class TaskError implements Serializable {
 
     public static final Serializer<TaskError> SERIALIZER_V0 = new Serializer<TaskError>() {
+        @NonNull
         @Override
         public String serialize(@NonNull TaskError object) {
             throw new RuntimeException("This serializer does not support serializing to json");
         }
 
+        @NonNull
         @Override
         public TaskError deserialize(@NonNull String string) {
             TaskError taskError = null;
@@ -66,6 +68,7 @@ public class TaskError implements Serializable {
     };
 
     public static final Serializer<TaskError> SERIALIZER_V1 = new Serializer<TaskError>() {
+        @NonNull
         @Override
         public String serialize(@NonNull TaskError object) {
             JSONObject jsonObject = new JSONObject();
@@ -80,6 +83,7 @@ public class TaskError implements Serializable {
             return jsonObject.toString();
         }
 
+        @NonNull
         @Override
         public TaskError deserialize(@NonNull String string) {
             TaskError taskError = null;

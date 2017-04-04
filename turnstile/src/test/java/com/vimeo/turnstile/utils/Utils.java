@@ -27,11 +27,13 @@ public final class Utils {
     public static <T extends BaseTask> Serializer<T> dummySerializer(@NonNull final Class<T> tClass) {
         final Gson gson = new Gson();
         return new Serializer<T>() {
+            @NonNull
             @Override
             public String serialize(@NonNull T object) {
                 return gson.toJson(object);
             }
 
+            @NonNull
             @Override
             public T deserialize(@NonNull String string) {
                 return gson.fromJson(string, tClass);

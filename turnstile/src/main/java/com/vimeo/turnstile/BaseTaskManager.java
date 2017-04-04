@@ -261,11 +261,13 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
         return new Serializer<T>() {
+            @NonNull
             @Override
             public String serialize(@NonNull T object) {
                 return gson.toJson(object);
             }
 
+            @NonNull
             @Override
             public T deserialize(@NonNull String string) {
                 return gson.fromJson(string, tClass);
