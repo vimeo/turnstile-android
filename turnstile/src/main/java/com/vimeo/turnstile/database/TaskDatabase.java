@@ -26,24 +26,21 @@ package com.vimeo.turnstile.database;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask;
-import com.vimeo.turnstile.BaseTask.TaskState;
+import com.vimeo.turnstile.Serializer;
 import com.vimeo.turnstile.utils.TaskLogger;
-import com.vimeo.turnstile.database.SqlHelper.SqlProperty;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import static com.vimeo.turnstile.database.TaskDatabaseOpenHelper.ID_COLUMN;
 
 /**
  * The database to hold all the {@link BaseTask}.
@@ -56,19 +53,13 @@ class TaskDatabase<T extends BaseTask> {
 
     private static final Executor IO_THREAD = Executors.newSingleThreadExecutor();
 
-    private static final int DATABASE_VERSION = 3;
+    //    private final DbOpenHelper mHelper;
+//    private final SQLiteDatabase mDatabase;
+//    private final SqlHelper mSqlHelper;
+//    private final Gson mGsonSerializer;
+    private final Serializer<T> mSerializer;
 
-    private final SqlProperty ID_COLUMN = new SqlProperty("_id", "text", 0);
-    private final SqlProperty STATE_COLUMN = new SqlProperty("state", "text", 1, TaskState.READY.name());
-    private final SqlProperty TASK_COLUMN = new SqlProperty("task", "text", 2);
-    private final SqlProperty CREATE_AT_COLUMN = new SqlProperty("created_at", "integer", 3);
-
-    private final DbOpenHelper mHelper;
-    private final SQLiteDatabase mDatabase;
-    private final SqlHelper mSqlHelper;
-    private final Class<T> mTaskClass;
-
-    private final Gson mGsonSerializer;
+    private final TaskDatabaseOpenHelper<T> mTaskDatabase;
 
     /**
      * Runs a runnable on the executor for this
@@ -79,38 +70,22 @@ class TaskDatabase<T extends BaseTask> {
      *
      * @param runnable the runnable to execute.
      */
-    public static void execute(@NonNull Runnable runnable) {
+    static void execute(@NonNull Runnable runnable) {
         IO_THREAD.execute(runnable);
     }
 
-    public TaskDatabase(Context context, String name, Class<T> taskClass) {
-        SqlProperty[] PROPERTIES = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
-        mHelper = new DbOpenHelper(context, name, DATABASE_VERSION, ID_COLUMN, PROPERTIES);
-        mDatabase = mHelper.getWritableDatabase();
-        mSqlHelper = new SqlHelper(mDatabase, mHelper.getTableName(), ID_COLUMN.columnName, PROPERTIES);
+    public TaskDatabase(@NonNull Context context, @NonNull String name, @NonNull Serializer<T> serializer) {
+        mTaskDatabase = new TaskDatabaseOpenHelper<>(context, name, serializer);
 
-        mTaskClass = taskClass;
-        mGsonSerializer =
-                new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                        .create();
+        mSerializer = serializer;
+
+//        mSqlHelper = helper.createSqlHelper();
+
+//        mGsonSerializer =
+//                new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+//                        .create();
     }
 
-    private void bindValues(SQLiteStatement stmt, T task) {
-        stmt.bindString(ID_COLUMN.bindColumn, task.getId());
-        stmt.bindString(STATE_COLUMN.bindColumn, task.getTaskState().name());
-        stmt.bindLong(CREATE_AT_COLUMN.bindColumn, task.getCreatedTimeMillis());
-
-        String baseTaskJson = mGsonSerializer.toJson(task);
-        stmt.bindString(TASK_COLUMN.bindColumn, baseTaskJson);
-        TaskLogger.getLogger().d("BIND FOR: " + task.getId());
-        TaskLogger.getLogger().d(baseTaskJson);
-    }
-
-    @WorkerThread
-    @Nullable
-    private T getTaskFromCursor(Cursor cursor) {
-        return mGsonSerializer.fromJson(cursor.getString(TASK_COLUMN.columnIndex), mTaskClass);
-    }
 
     /**
      * Gets the task associated with the
@@ -157,14 +132,13 @@ class TaskDatabase<T extends BaseTask> {
     @NonNull
     public List<T> getTasks(@Nullable String where) {
         List<T> tasks = new ArrayList<>();
-        String selectQuery = mSqlHelper.createSelect(where, null);
-        Cursor cursor = mDatabase.rawQuery(selectQuery, null);
+        Cursor cursor = mTaskDatabase.whereQuery(where);
         try {
             if (!cursor.moveToFirst()) {
                 return tasks;
             }
             while (!cursor.isAfterLast()) {
-                T task = getTaskFromCursor(cursor);
+                T task = TaskDatabaseOpenHelper.getTaskFromCursor(cursor, mSerializer);
                 if (task != null) {
                     // If something went wrong in deserialization, it will be null. It's logged earlier, but
                     // for now, we fail silently in the night 2/25/16 [KV]
@@ -198,16 +172,10 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     public long insert(@NonNull T task) {
-        SQLiteStatement stmt = mSqlHelper.getInsertStatement();
-        long id;
-        synchronized (stmt) {
-            stmt.clearBindings();
-            bindValues(stmt, task);
-            TaskLogger.getLogger().d("INSERT: " + stmt.toString());
-            id = stmt.executeInsert();
-        }
         // TODO: Do some logging or send it back! 2/10/16 [KV]
+        long id = mTaskDatabase.insert(task);
         TaskLogger.getLogger().d("INSERT COMPLETE " + id);
+
         return id;
     }
 
@@ -227,11 +195,11 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     public long upsert(@NonNull T task) {
-        final SQLiteStatement stmt = mSqlHelper.getUpsertStatement(task.getId());
+        final SQLiteStatement stmt = mTaskDatabase.getUpsertStatement(task.getId());
         long id;
         synchronized (stmt) {
             stmt.clearBindings();
-            bindValues(stmt, task);
+            TaskDatabaseOpenHelper.bindValues(stmt, task, mSerializer);
             TaskLogger.getLogger().d("UPSERT: " + stmt.toString());
             id = stmt.executeInsert();
         }
@@ -250,7 +218,7 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     public int count() {
-        return (int) mSqlHelper.getCountStatement().simpleQueryForLong();
+        return (int) mTaskDatabase.getCount();
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -297,7 +265,7 @@ class TaskDatabase<T extends BaseTask> {
     }
 
     private void delete(String id) {
-        SQLiteStatement stmt = mSqlHelper.getDeleteStatement(id);
+        SQLiteStatement stmt = mTaskDatabase.getDeleteStatement(id);
         stmt.execute();
         // TODO: Do some logging or send it back! 2/10/16 [KV]
         // Logger.d(LOG_TAG, "REMOVE COMPLETE: " + id);
@@ -311,7 +279,7 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     public void removeAll() {
-        mSqlHelper.truncate();
+        mTaskDatabase.removeAll();
     }
     // </editor-fold>
 }

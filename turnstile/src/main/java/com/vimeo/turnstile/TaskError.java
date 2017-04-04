@@ -26,6 +26,9 @@ package com.vimeo.turnstile;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.Serializable;
 
 /**
@@ -37,6 +40,63 @@ import java.io.Serializable;
  */
 @SuppressWarnings("unused")
 public class TaskError implements Serializable {
+
+    public static final Serializer<TaskError> SERIALIZER_V0 = new Serializer<TaskError>() {
+        @Override
+        public String serialize(@NonNull TaskError object) {
+            throw new RuntimeException("This serializer does not support serializing to json");
+        }
+
+        @Override
+        public TaskError deserialize(@NonNull String string) {
+            TaskError taskError = null;
+            try {
+                JSONObject jsonObject = new JSONObject(string);
+                String domain = jsonObject.getString("m_domain");
+                int code = jsonObject.getInt("m_code");
+                String message = jsonObject.getString("m_message");
+                Exception exception = (Exception) jsonObject.opt("m_exception");
+
+                taskError = new TaskError(domain, code, message, exception);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return taskError;
+        }
+    };
+
+    public static final Serializer<TaskError> SERIALIZER_V1 = new Serializer<TaskError>() {
+        @Override
+        public String serialize(@NonNull TaskError object) {
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("domain", object.mDomain);
+                jsonObject.put("code", object.mCode);
+                jsonObject.put("message", object.mMessage);
+                jsonObject.put("exception", object.mException);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return jsonObject.toString();
+        }
+
+        @Override
+        public TaskError deserialize(@NonNull String string) {
+            TaskError taskError = null;
+            try {
+                JSONObject jsonObject = new JSONObject(string);
+                String domain = jsonObject.getString("domain");
+                int code = jsonObject.getInt("code");
+                String message = jsonObject.getString("message");
+                Exception exception = (Exception) jsonObject.opt("exception");
+
+                taskError = new TaskError(domain, code, message, exception);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return taskError;
+        }
+    };
 
     private static final long serialVersionUID = -6263900550627688906L;
 

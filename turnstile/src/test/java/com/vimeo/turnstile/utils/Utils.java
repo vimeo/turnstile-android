@@ -1,5 +1,11 @@
 package com.vimeo.turnstile.utils;
 
+import android.support.annotation.NonNull;
+
+import com.google.gson.Gson;
+import com.vimeo.turnstile.BaseTask;
+import com.vimeo.turnstile.Serializer;
+
 import org.robolectric.shadows.ShadowLog;
 
 public final class Utils {
@@ -15,6 +21,22 @@ public final class Utils {
 
     public static void log(CharSequence tag, CharSequence message) {
         ShadowLog.stream.println(tag + ": " + message);
+    }
+
+    @NonNull
+    public static <T extends BaseTask> Serializer<T> dummySerializer(@NonNull final Class<T> tClass) {
+        final Gson gson = new Gson();
+        return new Serializer<T>() {
+            @Override
+            public String serialize(@NonNull T object) {
+                return gson.toJson(object);
+            }
+
+            @Override
+            public T deserialize(@NonNull String string) {
+                return gson.fromJson(string, tClass);
+            }
+        };
     }
 
 }

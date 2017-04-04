@@ -30,6 +30,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask.TaskStateListener;
 import com.vimeo.turnstile.TaskConstants.ManagerEvent;
 import com.vimeo.turnstile.TaskConstants.TaskEvent;
@@ -83,7 +86,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      * These variables are used by the manager
      * internally.
      */
-    public static final class Builder {
+    public static final class Builder<T extends BaseTask> {
 
         private static final int DEFAULT_MAX_ACTIVE_TASKS = 3;
 
@@ -96,6 +99,8 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
         boolean mBuilderStartOnDeviceBoot;
         int mMaxActiveTasks;
+        @Nullable
+        Serializer<T> mSerializer;
 
         public Builder(@NonNull Context context) {
             mBuilderContext = context;
@@ -128,6 +133,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         @NonNull
         public Builder withNotificationIntent(@Nullable Intent notificationIntent) {
             mBuilderNotificationIntent = notificationIntent;
+            return this;
+        }
+
+        public Builder withSerializer(@NonNull Serializer<T> serializer) {
+            mSerializer = serializer;
             return this;
         }
 
@@ -245,8 +255,25 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     // Initialization
     // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Initialization">
+    @NonNull
+    private static <T> Serializer<T> defaultSerializer(@NonNull final Class<T> tClass) {
+        final Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+        return new Serializer<T>() {
+            @Override
+            public String serialize(@NonNull T object) {
+                return gson.toJson(object);
+            }
 
-    protected BaseTaskManager(@NonNull Builder builder) {
+            @Override
+            public T deserialize(@NonNull String string) {
+                return gson.fromJson(string, tClass);
+            }
+        };
+    }
+
+    protected BaseTaskManager(@NonNull Builder<T> builder) {
         String taskName = getManagerName();
         Class<T> taskClass = getTaskClass();
         // Always use the application process - this context is a singleton itself which is the global
@@ -257,6 +284,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         mNotificationIntent = builder.mBuilderNotificationIntent;
         mStartOnDeviceBoot = builder.mBuilderStartOnDeviceBoot;
         mMaxActiveTasks = builder.mMaxActiveTasks;
+        Serializer<T> serializer = builder.mSerializer;
+
+        if (serializer == null) {
+            serializer = defaultSerializer(getTaskClass());
+        }
 
         // Needs to be initialized with the manager name so that this instance is manager-specific
         mTaskPreferences = new TaskPreferences(mContext, taskName);
@@ -274,7 +306,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
         // ---- Persistence ----
         // Synchronous load from SQLite. Not very performant but required for simplified in-memory cache
-        mTaskCache = new TaskCache<>(mContext, taskName, taskClass);
+        mTaskCache = new TaskCache<>(mContext, taskName, serializer);
 
         // ---- Boot Handling ----
         if (startOnDeviceBoot() && getServiceClass() != null) {
