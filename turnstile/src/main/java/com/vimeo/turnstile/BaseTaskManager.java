@@ -269,7 +269,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
             @NonNull
             @Override
-            public T deserialize(@NonNull String string) {
+            public T deserialize(@NonNull String string) throws Exception {
                 return gson.fromJson(string, tClass);
             }
         };

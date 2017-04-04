@@ -35,7 +35,7 @@ public final class Utils {
 
             @NonNull
             @Override
-            public T deserialize(@NonNull String string) {
+            public T deserialize(@NonNull String string) throws Exception {
                 return gson.fromJson(string, tClass);
             }
         };

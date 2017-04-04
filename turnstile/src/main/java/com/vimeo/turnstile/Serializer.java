@@ -46,8 +46,10 @@ public interface Serializer<T> {
      *
      * @param string the string to deserialize.
      * @return the object that was created.
+     * @throws Exception throws an exception if
+     *                   deserialization fails.
      */
     @NonNull
-    T deserialize(@NonNull String string);
+    T deserialize(@NonNull String string) throws Exception;
 
 }

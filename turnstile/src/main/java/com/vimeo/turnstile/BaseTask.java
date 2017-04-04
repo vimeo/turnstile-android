@@ -337,7 +337,7 @@ public abstract class BaseTask implements Serializable, Callable {
         mIsRetry = isRetry;
     }
 
-    public void setId(String id) {
+    public void setId(@NonNull String id) {
         mId = id;
     }
 

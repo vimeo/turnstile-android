@@ -50,20 +50,14 @@ public class TaskError implements Serializable {
 
         @NonNull
         @Override
-        public TaskError deserialize(@NonNull String string) {
-            TaskError taskError = null;
-            try {
-                JSONObject jsonObject = new JSONObject(string);
-                String domain = jsonObject.getString("m_domain");
-                int code = jsonObject.getInt("m_code");
-                String message = jsonObject.getString("m_message");
-                Exception exception = (Exception) jsonObject.opt("m_exception");
+        public TaskError deserialize(@NonNull String string) throws Exception {
+            JSONObject jsonObject = new JSONObject(string);
+            String domain = jsonObject.getString("m_domain");
+            int code = jsonObject.getInt("m_code");
+            String message = jsonObject.getString("m_message");
+            Exception exception = (Exception) jsonObject.opt("m_exception");
 
-                taskError = new TaskError(domain, code, message, exception);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return taskError;
+            return new TaskError(domain, code, message, exception);
         }
     };
 
@@ -85,20 +79,14 @@ public class TaskError implements Serializable {
 
         @NonNull
         @Override
-        public TaskError deserialize(@NonNull String string) {
-            TaskError taskError = null;
-            try {
-                JSONObject jsonObject = new JSONObject(string);
-                String domain = jsonObject.getString("domain");
-                int code = jsonObject.getInt("code");
-                String message = jsonObject.getString("message");
-                Exception exception = (Exception) jsonObject.opt("exception");
+        public TaskError deserialize(@NonNull String string) throws Exception {
+            JSONObject jsonObject = new JSONObject(string);
+            String domain = jsonObject.getString("domain");
+            int code = jsonObject.getInt("code");
+            String message = jsonObject.getString("message");
+            Exception exception = (Exception) jsonObject.opt("exception");
 
-                taskError = new TaskError(domain, code, message, exception);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return taskError;
+            return new TaskError(domain, code, message, exception);
         }
     };
 

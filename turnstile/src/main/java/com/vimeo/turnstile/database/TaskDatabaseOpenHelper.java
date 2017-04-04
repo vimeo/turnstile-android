@@ -39,7 +39,6 @@ import com.vimeo.turnstile.TaskError;
 import com.vimeo.turnstile.database.SqlHelper.SqlProperty;
 import com.vimeo.turnstile.utils.TaskLogger;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -109,13 +108,18 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     @WorkerThread
     @Nullable
     static <T extends BaseTask> T getTaskFromCursor(@NonNull Cursor cursor, @NonNull Serializer<T> serializer) {
-        T task = serializer.deserialize(cursor.getString(TASK_COLUMN.columnIndex));
-        task.setId(cursor.getString(ID_COLUMN.columnIndex));
-        task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
-        task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
-        task.setTaskError(TaskError.SERIALIZER_V1.deserialize(cursor.getString(TASK_ERROR.columnIndex)));
+        try {
+            T task = serializer.deserialize(cursor.getString(TASK_COLUMN.columnIndex));
+            task.setId(cursor.getString(ID_COLUMN.columnIndex));
+            task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
+            task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
+            task.setTaskError(TaskError.SERIALIZER_V1.deserialize(cursor.getString(TASK_ERROR.columnIndex)));
 
-        return task;
+            return task;
+        } catch (Exception e) {
+            TaskLogger.getLogger().e("Unable to parse task from cursor", e);
+            return null;
+        }
     }
 
 
@@ -165,8 +169,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                             task.setTaskError(taskError);
 
                             oldTaskList.add(task);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+                        } catch (Exception e) {
+                            TaskLogger.getLogger().e("Unable to parse object from database", e);
                         }
                     } while (cursor.moveToNext());
                 }
