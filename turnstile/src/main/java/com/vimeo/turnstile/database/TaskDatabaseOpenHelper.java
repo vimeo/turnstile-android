@@ -113,7 +113,11 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             task.setId(cursor.getString(ID_COLUMN.columnIndex));
             task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
             task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
-            task.setTaskError(TaskError.SERIALIZER_V1.deserialize(cursor.getString(TASK_ERROR.columnIndex)));
+
+            String taskErrorJson = cursor.getString(TASK_ERROR.columnIndex);
+            if (taskErrorJson != null) {
+                task.setTaskError(TaskError.SERIALIZER_V1.deserialize(taskErrorJson));
+            }
 
             return task;
         } catch (Exception e) {
@@ -198,7 +202,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         long id;
         synchronized (stmt) {
             stmt.clearBindings();
-            TaskDatabaseOpenHelper.bindValues(stmt, task, mSerializer);
+            bindValues(stmt, task, mSerializer);
             TaskLogger.getLogger().d("INSERT: " + stmt.toString());
             id = stmt.executeInsert();
         }
