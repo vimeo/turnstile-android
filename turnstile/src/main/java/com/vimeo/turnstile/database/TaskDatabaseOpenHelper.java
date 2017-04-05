@@ -55,7 +55,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 4;
 
-    static final SqlProperty ID_COLUMN = new SqlProperty("_id", "text", 0);
+    private static final SqlProperty ID_COLUMN = new SqlProperty("_id", "text", 0);
     private static final SqlProperty STATE_COLUMN = new SqlProperty("state", "text", 1, TaskState.READY.name());
     private static final SqlProperty TASK_COLUMN = new SqlProperty("task", "text", 2);
     private static final SqlProperty CREATE_AT_COLUMN = new SqlProperty("created_at", "integer", 3);
@@ -262,7 +262,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         String truncate = mSqlHelper.createTruncateStatement();
         mSQLiteDatabase.execSQL(truncate);
 
-        String vacuum = mSqlHelper.createVacuumStatement();
+        String vacuum = SqlHelper.createVacuumStatement();
         mSQLiteDatabase.execSQL(vacuum);
     }
 

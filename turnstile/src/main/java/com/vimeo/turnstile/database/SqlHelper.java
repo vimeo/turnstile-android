@@ -48,8 +48,8 @@ class SqlHelper {
     private final SqlProperty[] properties;
     private final int columnCount;
 
-    public SqlHelper(@NonNull String tableName,
-                     @NonNull String primaryKeyColumnName, @NonNull SqlProperty[] columns) {
+    SqlHelper(@NonNull String tableName,
+              @NonNull String primaryKeyColumnName, @NonNull SqlProperty[] columns) {
         this.tableName = tableName;
         this.properties = columns.clone();
         this.columnCount = properties.length;
@@ -57,12 +57,12 @@ class SqlHelper {
     }
 
     @NonNull
-    public SqlProperty[] getProperties() {
+    SqlProperty[] getProperties() {
         return properties;
     }
 
-    public static String create(String table, SqlProperty primaryKey, boolean createdColumn,
-                                SqlProperty... propertiesArray) {
+    static String create(String table, SqlProperty primaryKey, boolean createdColumn,
+                         SqlProperty... propertiesArray) {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
         builder.append(table).append(" (");
         builder.append(primaryKey.columnName).append(" ");
@@ -98,7 +98,7 @@ class SqlHelper {
         return builder.toString();
     }
 
-    public static String drop(String tableToDrop) {
+    static String drop(String tableToDrop) {
         TaskLogger.getLogger().d("DROP: " + tableToDrop);
         return "DROP TABLE IF EXISTS " + tableToDrop;
     }
@@ -158,7 +158,7 @@ class SqlHelper {
 		           COALESCE('Susan Boyle', (SELECT name FROM Employee WHERE id = 1)),
 		           COALESCE((SELECT role FROM Employee WHERE id = 1), 'Benchwarmer'));
      */
-    public String getUpsertStatement(@NonNull String id) {
+    String getUpsertStatement(@NonNull String id) {
         id = DatabaseUtils.sqlEscapeString(id);
         StringBuilder builder = new StringBuilder("INSERT OR REPLACE INTO ").append(tableName);
         builder.append("(");
@@ -239,7 +239,7 @@ class SqlHelper {
         return insertOrReplaceStatement;
     }
 
-    public String getDeleteStatement(String id) {
+    String getDeleteStatement(String id) {
         id = DatabaseUtils.sqlEscapeString(id);
         return "DELETE FROM " + tableName + " WHERE " + primaryKeyColumnName + "=" + id;
     }
@@ -285,34 +285,37 @@ class SqlHelper {
         return builder.toString();
     }
 
-    public String createTruncateStatement() {
+    String createTruncateStatement() {
         return "DELETE FROM " + tableName;
     }
 
-    public String createVacuumStatement() {
+    static String createVacuumStatement() {
         return "VACUUM";
     }
 
-    public static class SqlProperty {
+    static class SqlProperty {
 
-        public final String columnName;
-        public final String type;
-        public final int columnIndex;
-        public final int bindColumn;
-        public final ForeignKey foreignKey;
+        @NonNull
+        final String columnName;
+        @NonNull
+        final String type;
+        final int columnIndex;
+        final int bindColumn;
         @Nullable
-        public final String defaultValue;
+        final ForeignKey foreignKey;
+        @Nullable
+        final String defaultValue;
 
-        public SqlProperty(String columnName, String type, int columnIndex, String defaultValue) {
+        SqlProperty(String columnName, String type, int columnIndex, String defaultValue) {
             this(columnName, type, columnIndex, null, defaultValue);
         }
 
-        public SqlProperty(String columnName, String type, int columnIndex) {
+        SqlProperty(String columnName, String type, int columnIndex) {
             this(columnName, type, columnIndex, null, null);
         }
 
-        public SqlProperty(String columnName, String type, int columnIndex, ForeignKey foreignKey,
-                           @Nullable String defaultValue) {
+        SqlProperty(@NonNull String columnName, @NonNull String type, int columnIndex, @Nullable ForeignKey foreignKey,
+                    @Nullable String defaultValue) {
             this.columnName = columnName;
             this.type = type;
             this.columnIndex = columnIndex;
@@ -322,18 +325,20 @@ class SqlHelper {
         }
     }
 
-    public static class ForeignKey {
+    static class ForeignKey {
 
+        @NonNull
         final String targetTable;
+        @NonNull
         final String targetFieldName;
 
-        public ForeignKey(String targetTable, String targetFieldName) {
+        public ForeignKey(@NonNull String targetTable, @NonNull String targetFieldName) {
             this.targetTable = targetTable;
             this.targetFieldName = targetFieldName;
         }
     }
 
-    public static class Order {
+    static class Order {
 
         final SqlProperty property;
         final Type type;
@@ -343,7 +348,7 @@ class SqlHelper {
             this.type = type;
         }
 
-        public enum Type {
+        enum Type {
             ASC,
             DESC
         }
