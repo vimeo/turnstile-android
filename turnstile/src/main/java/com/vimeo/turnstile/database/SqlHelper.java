@@ -56,6 +56,11 @@ class SqlHelper {
         this.primaryKeyColumnName = primaryKeyColumnName;
     }
 
+    @NonNull
+    public SqlProperty[] getProperties() {
+        return properties;
+    }
+
     public static String create(String table, SqlProperty primaryKey, boolean createdColumn,
                                 SqlProperty... propertiesArray) {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS ");

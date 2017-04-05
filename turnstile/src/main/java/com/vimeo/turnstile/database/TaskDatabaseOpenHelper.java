@@ -88,9 +88,6 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         mSerializer = serializer;
 
         mSQLiteDatabase = getWritableDatabase();
-        mSQLiteDatabase.close();
-
-        mSQLiteDatabase = getWritableDatabase();
         mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
     }
 
@@ -158,7 +155,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                 mSQLiteDatabase = db;
                 SqlProperty[] sqlProperties = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
                 mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, sqlProperties);
-                Cursor cursor = whereQuery(null);
+                Cursor cursor = allItemsQuery();
                 List<T> oldTaskList = new ArrayList<>();
 
                 if (cursor.moveToFirst()) {
@@ -213,20 +210,37 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
     long insert(@NonNull T task) {
         SQLiteStatement stmt = getInsertStatement();
-        long id;
-        synchronized (stmt) {
-            stmt.clearBindings();
-            bindValues(stmt, task, mSerializer);
-            TaskLogger.getLogger().d("INSERT: " + stmt.toString());
-            id = stmt.executeInsert();
-        }
-        return id;
+        stmt.clearBindings();
+        bindValues(stmt, task, mSerializer);
+        TaskLogger.getLogger().d("INSERT: " + stmt.toString());
+
+        return stmt.executeInsert();
     }
 
     @NonNull
-    Cursor whereQuery(String where) {
-        String selectQuery = mSqlHelper.createSelect(where, null);
-        return mSQLiteDatabase.rawQuery(selectQuery, null);
+    Cursor allItemsQuery() {
+        String[] props = sqlPropertiesToStringProperties(mSqlHelper);
+
+        return mSQLiteDatabase.query(mTableName, props, null, null, null, null, null);
+    }
+
+    Cursor itemForIdQuery(@NonNull String id) {
+        String[] props = sqlPropertiesToStringProperties(mSqlHelper);
+
+        System.out.println("HOLY FUCK: " + id);
+
+        return mSQLiteDatabase.query(mTableName, props, ID_COLUMN.columnName + "=?", new String[]{id}, null, null, null);
+    }
+
+    @NonNull
+    private static String[] sqlPropertiesToStringProperties(SqlHelper sqlHelper) {
+        SqlProperty[] sqlProperties = sqlHelper.getProperties();
+        String[] props = new String[sqlProperties.length];
+        for (int n = 0; n < sqlProperties.length; n++) {
+            props[n] = sqlProperties[n].columnName;
+        }
+
+        return props;
     }
 
     @NonNull

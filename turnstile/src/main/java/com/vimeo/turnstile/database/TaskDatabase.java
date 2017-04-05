@@ -25,7 +25,6 @@ package com.vimeo.turnstile.database;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -39,8 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import static com.vimeo.turnstile.database.TaskDatabaseOpenHelper.ID_COLUMN;
 
 /**
  * The database to hold all the {@link BaseTask}.
@@ -89,8 +86,10 @@ class TaskDatabase<T extends BaseTask> {
         if (id.isEmpty()) {
             return null;
         }
-        id = DatabaseUtils.sqlEscapeString(id);
-        List<T> tasks = getTasks(ID_COLUMN.columnName + " = " + id);
+
+        Cursor cursor = mTaskDatabase.itemForIdQuery(id);
+
+        List<T> tasks = getTasksFromCursor(cursor);
         if (tasks.size() > 1) {
             throw new IllegalStateException("More than one task with the same id: " + id);
         }
@@ -110,27 +109,29 @@ class TaskDatabase<T extends BaseTask> {
      * NOTE: this method is synchronous and
      * should be called from a {@link WorkerThread}.
      *
-     * @param where the SQL WHERE clause to select
-     *              the tasks that you want, may
-     *              be null.
      * @return a non-null list of tasks, may be
      * empty if the query does not return any tasks.
      */
     @WorkerThread
     @NonNull
-    public List<T> getTasks(@Nullable String where) {
+    public List<T> getAllTasks() {
+        Cursor cursor = mTaskDatabase.allItemsQuery();
+
+        return getTasksFromCursor(cursor);
+    }
+
+    @NonNull
+    private List<T> getTasksFromCursor(Cursor cursor) {
         List<T> tasks = new ArrayList<>();
-        Cursor cursor = mTaskDatabase.whereQuery(where);
+
         try {
-            if (cursor.moveToFirst()) {
-                do {
-                    T task = TaskDatabaseOpenHelper.getTaskFromCursor(cursor, mSerializer);
-                    if (task != null) {
-                        // If something went wrong in deserialization, it will be null. It's logged earlier, but
-                        // for now, we fail silently in the night 2/25/16 [KV]
-                        tasks.add(task);
-                    }
-                } while (cursor.moveToNext());
+            while (cursor.moveToNext()) {
+                T task = TaskDatabaseOpenHelper.getTaskFromCursor(cursor, mSerializer);
+                if (task != null) {
+                    // If something went wrong in deserialization, it will be null. It's logged earlier, but
+                    // for now, we fail silently in the night 2/25/16 [KV]
+                    tasks.add(task);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -140,6 +141,7 @@ class TaskDatabase<T extends BaseTask> {
         } finally {
             cursor.close();
         }
+
         return tasks;
     }
 

@@ -78,7 +78,7 @@ public final class TaskCache<T extends BaseTask> {
     @WorkerThread
     public TaskCache(@NonNull Context context, @NonNull String taskName, Serializer<T> serializer) {
         mDatabase = new TaskDatabase<>(context, taskName, serializer);
-        List<T> tasks = mDatabase.getTasks(null);
+        List<T> tasks = mDatabase.getAllTasks();
         for (T task : tasks) {
             mTaskMap.put(task.getId(), task);
         }
