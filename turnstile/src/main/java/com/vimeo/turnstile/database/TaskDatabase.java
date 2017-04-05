@@ -122,23 +122,21 @@ class TaskDatabase<T extends BaseTask> {
         List<T> tasks = new ArrayList<>();
         Cursor cursor = mTaskDatabase.whereQuery(where);
         try {
-            if (!cursor.moveToFirst()) {
-                return tasks;
-            }
-            while (!cursor.isAfterLast()) {
-                T task = TaskDatabaseOpenHelper.getTaskFromCursor(cursor, mSerializer);
-                if (task != null) {
-                    // If something went wrong in deserialization, it will be null. It's logged earlier, but
-                    // for now, we fail silently in the night 2/25/16 [KV]
-                    tasks.add(task);
-                }
-                cursor.moveToNext();
+            if (cursor.moveToFirst()) {
+                do {
+                    T task = TaskDatabaseOpenHelper.getTaskFromCursor(cursor, mSerializer);
+                    if (task != null) {
+                        // If something went wrong in deserialization, it will be null. It's logged earlier, but
+                        // for now, we fail silently in the night 2/25/16 [KV]
+                        tasks.add(task);
+                    }
+                } while (cursor.moveToNext());
             }
         } catch (Exception e) {
+            e.printStackTrace();
             // TODO: Do some logging or send it back! 2/10/16 [KV]
             // We should be logging the fact that there was a failure. Either return nullable to let the
             // caller handle the error or log it here if this guy knows about logging 2/26/16 [KV]
-            return tasks;
         } finally {
             cursor.close();
         }
