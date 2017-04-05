@@ -24,8 +24,6 @@
 package com.vimeo.turnstile.database;
 
 import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -41,19 +39,17 @@ class SqlHelper {
     private static final SqlProperty CREATE_AT_COLUMN = new SqlProperty("created_at", "DATETIME", -1);
     // TODO: Add convenience for updated_at column 2/26/16 [KV]
 
-    private SQLiteStatement insertStatement;
-    private SQLiteStatement insertOrReplaceStatement;
-    private SQLiteStatement countStatement;
+    private String insertStatement;
+    private String insertOrReplaceStatement;
+    private String countStatement;
 
-    private final SQLiteDatabase db;
     private final String tableName;
     private final String primaryKeyColumnName;
     private final SqlProperty[] properties;
     private final int columnCount;
 
-    public SqlHelper(@NonNull SQLiteDatabase db, @NonNull String tableName,
+    public SqlHelper(@NonNull String tableName,
                      @NonNull String primaryKeyColumnName, @NonNull SqlProperty[] columns) {
-        this.db = db;
         this.tableName = tableName;
         this.properties = columns.clone();
         this.columnCount = properties.length;
@@ -102,8 +98,8 @@ class SqlHelper {
         return "DROP TABLE IF EXISTS " + tableToDrop;
     }
 
-    public SQLiteStatement getUpdateForPropertyStatement(String id, SqlProperty property, String value,
-                                                         @Nullable String additionalWhere) {
+    public String getUpdateForPropertyStatement(String id, SqlProperty property, String value,
+                                                @Nullable String additionalWhere) {
         id = DatabaseUtils.sqlEscapeString(id);
         StringBuilder builder = new StringBuilder("UPDATE ").append(tableName)
                 .append(" SET ")
@@ -117,15 +113,16 @@ class SqlHelper {
         if (additionalWhere != null) {
             builder.append(" AND ").append(additionalWhere);
         }
-        return db.compileStatement(builder.toString());
+
+        return builder.toString();
     }
 
-    public SQLiteStatement getUpdateByIdStatement(String id) {
+    public String getUpdateByIdStatement(String id) {
         return getUpdateStatement(primaryKeyColumnName + "=" + id);
     }
 
     // Gets an update statement to update every column
-    private SQLiteStatement getUpdateStatement(@NonNull String where) {
+    private String getUpdateStatement(@NonNull String where) {
         StringBuilder builder = new StringBuilder("UPDATE ").append(tableName);
         builder.append(" SET ");
         for (int i = 0; i < columnCount; i++) {
@@ -142,7 +139,8 @@ class SqlHelper {
         } else {
             builder.append(" WHERE ").append(where);
         }
-        return db.compileStatement(builder.toString());
+
+        return builder.toString();
     }
 
     // Gets an update or insert statement
@@ -155,7 +153,7 @@ class SqlHelper {
 		           COALESCE('Susan Boyle', (SELECT name FROM Employee WHERE id = 1)),
 		           COALESCE((SELECT role FROM Employee WHERE id = 1), 'Benchwarmer'));
      */
-    public SQLiteStatement getUpsertStatement(@NonNull String id) {
+    public String getUpsertStatement(@NonNull String id) {
         id = DatabaseUtils.sqlEscapeString(id);
         StringBuilder builder = new StringBuilder("INSERT OR REPLACE INTO ").append(tableName);
         builder.append("(");
@@ -183,11 +181,12 @@ class SqlHelper {
                     .append("))");
         }
         builder.append(")");
-        return db.compileStatement(builder.toString());
+
+        return builder.toString();
     }
 
     // This has an OR IGNORE clause which will not insert if the value already exists
-    public SQLiteStatement getInsertStatement() {
+    public String getInsertStatement() {
         if (insertStatement == null) {
             StringBuilder builder = new StringBuilder("INSERT OR IGNORE INTO ").append(tableName);
             builder.append("(");
@@ -206,19 +205,19 @@ class SqlHelper {
                 builder.append("?");
             }
             builder.append(")");
-            insertStatement = db.compileStatement(builder.toString());
+            insertStatement = builder.toString();
         }
         return insertStatement;
     }
 
-    public SQLiteStatement getCountStatement() {
+    public String getCountStatement() {
         if (countStatement == null) {
-            countStatement = db.compileStatement("SELECT COUNT(*) FROM " + tableName);
+            countStatement = "SELECT COUNT(*) FROM " + tableName;
         }
         return countStatement;
     }
 
-    public SQLiteStatement getInsertOrReplaceStatement() {
+    public String getInsertOrReplaceStatement() {
         if (insertOrReplaceStatement == null) {
             StringBuilder builder = new StringBuilder("INSERT OR REPLACE INTO ").append(tableName);
             builder.append(" VALUES (");
@@ -229,14 +228,15 @@ class SqlHelper {
                 builder.append("?");
             }
             builder.append(")");
-            insertOrReplaceStatement = db.compileStatement(builder.toString());
+            insertOrReplaceStatement = builder.toString();
         }
+
         return insertOrReplaceStatement;
     }
 
-    public SQLiteStatement getDeleteStatement(String id) {
+    public String getDeleteStatement(String id) {
         id = DatabaseUtils.sqlEscapeString(id);
-        return db.compileStatement("DELETE FROM " + tableName + " WHERE " + primaryKeyColumnName + "=" + id);
+        return "DELETE FROM " + tableName + " WHERE " + primaryKeyColumnName + "=" + id;
     }
 
     public String createSelect(@Nullable String where, @Nullable Integer limit, @Nullable Order... orders) {
@@ -280,13 +280,12 @@ class SqlHelper {
         return builder.toString();
     }
 
-    public void truncate() {
-        db.execSQL("DELETE FROM " + tableName);
-        vacuum();
+    public String createTruncateStatement() {
+        return "DELETE FROM " + tableName;
     }
 
-    private void vacuum() {
-        db.execSQL("VACUUM");
+    public String createVacuumStatement() {
+        return "VACUUM";
     }
 
     public static class SqlProperty {

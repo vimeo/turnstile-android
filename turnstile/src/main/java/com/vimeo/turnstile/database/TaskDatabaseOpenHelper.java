@@ -91,7 +91,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         mSQLiteDatabase.close();
 
         mSQLiteDatabase = getWritableDatabase();
-        mSqlHelper = new SqlHelper(mSQLiteDatabase, mTableName, ID_COLUMN.columnName, PROPERTIES);
+        mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
     }
 
     static <T extends BaseTask> void bindValues(@NonNull SQLiteStatement stmt, T task, Serializer<T> serializer) {
@@ -156,7 +156,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             case 3:
                 // Pull tasks from the old database, drop, and recreate.
                 mSQLiteDatabase = db;
-                mSqlHelper = new SqlHelper(mSQLiteDatabase, mTableName, ID_COLUMN.columnName, PROPERTIES);
+                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
                 Cursor cursor = whereQuery(null);
                 List<T> oldTaskList = new ArrayList<>();
 
@@ -227,25 +227,29 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
     @NonNull
     private SQLiteStatement getInsertStatement() {
-        return mSqlHelper.getInsertStatement();
+        return mSQLiteDatabase.compileStatement(mSqlHelper.getInsertStatement());
     }
 
     @NonNull
     SQLiteStatement getUpsertStatement(@NonNull String id) {
-        return mSqlHelper.getUpsertStatement(id);
+        return mSQLiteDatabase.compileStatement(mSqlHelper.getUpsertStatement(id));
     }
 
     @NonNull
     SQLiteStatement getDeleteStatement(@NonNull String id) {
-        return mSqlHelper.getDeleteStatement(id);
+        return mSQLiteDatabase.compileStatement(mSqlHelper.getDeleteStatement(id));
     }
 
     void removeAll() {
-        mSqlHelper.truncate();
+        String truncate = mSqlHelper.createTruncateStatement();
+        mSQLiteDatabase.execSQL(truncate);
+
+        String vacuum = mSqlHelper.createVacuumStatement();
+        mSQLiteDatabase.execSQL(vacuum);
     }
 
     long getCount() {
-        return mSqlHelper.getCountStatement().simpleQueryForLong();
+        return mSQLiteDatabase.compileStatement(mSqlHelper.getCountStatement()).simpleQueryForLong();
     }
 }
 
