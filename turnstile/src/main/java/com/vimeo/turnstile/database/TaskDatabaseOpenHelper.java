@@ -88,6 +88,9 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         mSerializer = serializer;
 
         mSQLiteDatabase = getWritableDatabase();
+        mSQLiteDatabase.close();
+
+        mSQLiteDatabase = getWritableDatabase();
         mSqlHelper = new SqlHelper(mSQLiteDatabase, mTableName, ID_COLUMN.columnName, PROPERTIES);
     }
 
