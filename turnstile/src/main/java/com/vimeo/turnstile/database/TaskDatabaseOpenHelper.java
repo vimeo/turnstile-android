@@ -156,7 +156,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             case 3:
                 // Pull tasks from the old database, drop, and recreate.
                 mSQLiteDatabase = db;
-                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
+                SqlProperty[] sqlProperties = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
+                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, sqlProperties);
                 Cursor cursor = whereQuery(null);
                 List<T> oldTaskList = new ArrayList<>();
 
@@ -186,6 +187,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                         }
                     } while (cursor.moveToNext());
                 }
+
+                cursor.close();
 
                 db.execSQL(SqlHelper.drop(mTableName));
                 onCreate(db);
