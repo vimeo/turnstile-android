@@ -31,6 +31,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 
 import com.vimeo.turnstile.BaseTask;
 import com.vimeo.turnstile.BaseTask.TaskState;
@@ -166,7 +167,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                             jsonObject.remove("m_is_running");
 
                             String errorObject = jsonObject.optString("error");
-                            TaskError taskError = errorObject != null ? TaskError.SERIALIZER_V0.deserialize(errorObject) : null;
+                            TaskError taskError = !TextUtils.isEmpty(errorObject) ? TaskError.SERIALIZER_V0.deserialize(errorObject) : null;
 
                             T task = mSerializer.deserialize(jsonObject.toString());
 
