@@ -193,10 +193,11 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                 db.execSQL(SqlHelper.drop(mTableName));
                 onCreate(db);
 
+                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
+
                 for (T oldTask : oldTaskList) {
                     insert(oldTask);
                 }
-
 
                 break;
         }
