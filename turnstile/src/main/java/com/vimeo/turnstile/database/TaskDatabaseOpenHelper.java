@@ -96,7 +96,9 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         stmt.bindLong(CREATE_AT_COLUMN.bindColumn, task.getCreatedTimeMillis());
         TaskError taskError = task.getTaskError();
         if (taskError != null) {
-            stmt.bindString(TASK_COLUMN.bindColumn, TaskError.SERIALIZER_V1.serialize(taskError));
+            stmt.bindString(TASK_ERROR.bindColumn, TaskError.SERIALIZER_V1.serialize(taskError));
+        } else {
+            stmt.bindNull(TASK_ERROR.bindColumn);
         }
 
         String baseTaskJson = serializer.serialize(task);
@@ -121,6 +123,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
             return task;
         } catch (Exception e) {
+            e.printStackTrace();
             TaskLogger.getLogger().e("Unable to parse task from cursor", e);
             return null;
         }
@@ -162,8 +165,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                             jsonObject.remove("created_at");
                             jsonObject.remove("m_is_running");
 
-                            String errorObject = jsonObject.getString("error");
-                            TaskError taskError = TaskError.SERIALIZER_V0.deserialize(errorObject);
+                            String errorObject = jsonObject.optString("error");
+                            TaskError taskError = errorObject != null ? TaskError.SERIALIZER_V0.deserialize(errorObject) : null;
 
                             T task = mSerializer.deserialize(jsonObject.toString());
 
@@ -174,6 +177,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
                             oldTaskList.add(task);
                         } catch (Exception e) {
+                            e.printStackTrace();
                             TaskLogger.getLogger().e("Unable to parse object from database", e);
                         }
                     } while (cursor.moveToNext());
@@ -185,6 +189,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                 for (T oldTask : oldTaskList) {
                     insert(oldTask);
                 }
+
+
                 break;
         }
     }
