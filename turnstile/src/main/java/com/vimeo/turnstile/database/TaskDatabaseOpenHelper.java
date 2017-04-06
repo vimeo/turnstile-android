@@ -25,6 +25,7 @@ package com.vimeo.turnstile.database;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
@@ -53,6 +54,8 @@ import java.util.List;
  */
 class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
+    private static final int NOT_FOUND = -1;
+
     private static final int DATABASE_VERSION = 4;
 
     private static final SqlProperty ID_COLUMN = new SqlProperty("_id", "text", 0);
@@ -60,6 +63,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     private static final SqlProperty TASK_COLUMN = new SqlProperty("task", "text", 2);
     private static final SqlProperty CREATE_AT_COLUMN = new SqlProperty("created_at", "integer", 3);
     private static final SqlProperty TASK_ERROR = new SqlProperty("error", "text", 4);
+
     private static final SqlProperty[] PROPERTIES = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN, TASK_ERROR};
 
     @NonNull
@@ -88,10 +92,12 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         mSerializer = serializer;
 
         mSQLiteDatabase = getWritableDatabase();
-        mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
+        mSqlHelper = new SqlHelper(mTableName, PROPERTIES);
     }
 
-    static <T extends BaseTask> void bindValues(@NonNull SQLiteStatement stmt, T task, Serializer<T> serializer) {
+    private static <T extends BaseTask> void bindValues(@NonNull SQLiteStatement stmt,
+                                                        @NonNull T task,
+                                                        @NonNull Serializer<T> serializer) {
         stmt.bindString(ID_COLUMN.bindColumn, task.getId());
         stmt.bindString(STATE_COLUMN.bindColumn, task.getTaskState().name());
         stmt.bindLong(CREATE_AT_COLUMN.bindColumn, task.getCreatedTimeMillis());
@@ -130,11 +136,10 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         }
     }
 
-
     @Override
     public void onCreate(SQLiteDatabase db) {
         SqlProperty[] propertiesWithoutId = Arrays.copyOfRange(mProperties, 1, mColumnCount);
-        String createQuery = SqlHelper.create(mTableName, mPrimaryKeyProperty, false, propertiesWithoutId);
+        String createQuery = SqlHelper.createCreateStatement(mTableName, mPrimaryKeyProperty, propertiesWithoutId);
         db.execSQL(createQuery);
     }
 
@@ -145,52 +150,50 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             case 1:
             case 2:
                 // If the old version is the first version which had everything persisted in a separate column
-                // let's just drop it and create a new one. If there are any in-progress tasks,
+                // let's just createDropStatement it and createCreateStatement a new one. If there are any in-progress tasks,
                 // they'll be lost 2/25/16 [KV]
-                db.execSQL(SqlHelper.drop(mTableName));
+                db.execSQL(SqlHelper.createDropStatement(mTableName));
                 onCreate(db);
                 break;
             case 3:
-                // Pull tasks from the old database, drop, and recreate.
+                // Pull tasks from the old database, createDropStatement, and recreate.
                 mSQLiteDatabase = db;
                 SqlProperty[] sqlProperties = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
-                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, sqlProperties);
+                mSqlHelper = new SqlHelper(mTableName, sqlProperties);
                 Cursor cursor = allItemsQuery();
                 List<T> oldTaskList = new ArrayList<>();
 
-                if (cursor.moveToFirst()) {
-                    do {
-                        try {
-                            JSONObject jsonObject = new JSONObject(cursor.getString(TASK_COLUMN.columnIndex));
-                            jsonObject.remove("id");
-                            jsonObject.remove("state");
-                            jsonObject.remove("created_at");
-                            jsonObject.remove("m_is_running");
+                while (cursor.moveToNext()) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(cursor.getString(TASK_COLUMN.columnIndex));
+                        jsonObject.remove("id");
+                        jsonObject.remove("state");
+                        jsonObject.remove("created_at");
+                        jsonObject.remove("m_is_running");
 
-                            String errorObject = jsonObject.optString("error");
-                            TaskError taskError = !TextUtils.isEmpty(errorObject) ? TaskError.SERIALIZER_V0.deserialize(errorObject) : null;
+                        String errorObject = jsonObject.optString("error");
+                        TaskError taskError = !TextUtils.isEmpty(errorObject) ? TaskError.SERIALIZER_V0.deserialize(errorObject) : null;
 
-                            T task = mSerializer.deserialize(jsonObject.toString());
+                        T task = mSerializer.deserialize(jsonObject.toString());
 
-                            task.setId(cursor.getString(ID_COLUMN.columnIndex));
-                            task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
-                            task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
-                            task.setTaskError(taskError);
+                        task.setId(cursor.getString(ID_COLUMN.columnIndex));
+                        task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
+                        task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
+                        task.setTaskError(taskError);
 
-                            oldTaskList.add(task);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            TaskLogger.getLogger().e("Unable to parse object from database", e);
-                        }
-                    } while (cursor.moveToNext());
+                        oldTaskList.add(task);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        TaskLogger.getLogger().e("Unable to parse object from database", e);
+                    }
                 }
 
                 cursor.close();
 
-                db.execSQL(SqlHelper.drop(mTableName));
+                db.execSQL(SqlHelper.createDropStatement(mTableName));
                 onCreate(db);
 
-                mSqlHelper = new SqlHelper(mTableName, ID_COLUMN.columnName, PROPERTIES);
+                mSqlHelper = new SqlHelper(mTableName, PROPERTIES);
 
                 for (T oldTask : oldTaskList) {
                     insert(oldTask);
@@ -204,37 +207,36 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         TaskLogger.getLogger().w("Downgrading database from version " + oldVersion + " to " + newVersion +
                                  ", which will destroy all old data");
-        db.execSQL(SqlHelper.drop(mTableName));
+        db.execSQL(SqlHelper.createDropStatement(mTableName));
         onCreate(db);
     }
 
     long insert(@NonNull T task) {
-        SQLiteStatement stmt = getInsertStatement();
-        stmt.clearBindings();
-        bindValues(stmt, task, mSerializer);
-        TaskLogger.getLogger().d("INSERT: " + stmt.toString());
+        String uncompiledStatement = mSqlHelper.createInsertStatement();
+        SQLiteStatement insertStatement = mSQLiteDatabase.compileStatement(uncompiledStatement);
+        insertStatement.clearBindings();
+        bindValues(insertStatement, task, mSerializer);
 
-        return stmt.executeInsert();
+        TaskLogger.getLogger().d("INSERT: " + insertStatement.toString());
+
+        return insertStatement.executeInsert();
     }
 
     @NonNull
     Cursor allItemsQuery() {
-        String[] props = sqlPropertiesToStringProperties(mSqlHelper);
+        String[] props = sqlPropertiesToStringProperties(mSqlHelper.getProperties());
 
         return mSQLiteDatabase.query(mTableName, props, null, null, null, null, null);
     }
 
     Cursor itemForIdQuery(@NonNull String id) {
-        String[] props = sqlPropertiesToStringProperties(mSqlHelper);
-
-        System.out.println("HOLY FUCK: " + id);
+        String[] props = sqlPropertiesToStringProperties(mSqlHelper.getProperties());
 
         return mSQLiteDatabase.query(mTableName, props, ID_COLUMN.columnName + "=?", new String[]{id}, null, null, null);
     }
 
     @NonNull
-    private static String[] sqlPropertiesToStringProperties(SqlHelper sqlHelper) {
-        SqlProperty[] sqlProperties = sqlHelper.getProperties();
+    private static String[] sqlPropertiesToStringProperties(SqlProperty... sqlProperties) {
         String[] props = new String[sqlProperties.length];
         for (int n = 0; n < sqlProperties.length; n++) {
             props[n] = sqlProperties[n].columnName;
@@ -243,31 +245,32 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         return props;
     }
 
-    @NonNull
-    private SQLiteStatement getInsertStatement() {
-        return mSQLiteDatabase.compileStatement(mSqlHelper.getInsertStatement());
+    boolean upsertItem(@NonNull T task) {
+        String id = task.getId();
+        String uncompiledStatement = SqlHelper.createUpsertStatement(mTableName, mProperties, ID_COLUMN, id);
+        SQLiteStatement upsertStatement = mSQLiteDatabase.compileStatement(uncompiledStatement);
+        upsertStatement.clearBindings();
+        TaskDatabaseOpenHelper.bindValues(upsertStatement, task, mSerializer);
+
+        TaskLogger.getLogger().d("UPSERT: " + upsertStatement.toString());
+
+        return upsertStatement.executeInsert() != NOT_FOUND;
     }
 
-    @NonNull
-    SQLiteStatement getUpsertStatement(@NonNull String id) {
-        return mSQLiteDatabase.compileStatement(mSqlHelper.getUpsertStatement(id));
+    boolean deleteItemForId(@NonNull String id) {
+        return mSQLiteDatabase.delete(mTableName, ID_COLUMN.columnName + "=?", new String[]{id}) > 0;
     }
 
-    @NonNull
-    SQLiteStatement getDeleteStatement(@NonNull String id) {
-        return mSQLiteDatabase.compileStatement(mSqlHelper.getDeleteStatement(id));
+    void truncateDatabase() {
+        mSQLiteDatabase.execSQL("DELETE FROM " + mTableName);
     }
 
-    void removeAll() {
-        String truncate = mSqlHelper.createTruncateStatement();
-        mSQLiteDatabase.execSQL(truncate);
-
-        String vacuum = SqlHelper.createVacuumStatement();
-        mSQLiteDatabase.execSQL(vacuum);
+    void vacuumDatabase() {
+        mSQLiteDatabase.execSQL("VACUUM");
     }
 
     long getCount() {
-        return mSQLiteDatabase.compileStatement(mSqlHelper.getCountStatement()).simpleQueryForLong();
+        return DatabaseUtils.queryNumEntries(mSQLiteDatabase, mTableName);
     }
 }
 

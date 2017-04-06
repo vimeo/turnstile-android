@@ -25,7 +25,6 @@ package com.vimeo.turnstile.database;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteStatement;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
@@ -65,7 +64,7 @@ class TaskDatabase<T extends BaseTask> {
         IO_THREAD.execute(runnable);
     }
 
-    public TaskDatabase(@NonNull Context context, @NonNull String name, @NonNull Serializer<T> serializer) {
+    TaskDatabase(@NonNull Context context, @NonNull String name, @NonNull Serializer<T> serializer) {
         mTaskDatabase = new TaskDatabaseOpenHelper<>(context, name, serializer);
 
         mSerializer = serializer;
@@ -82,7 +81,7 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     @Nullable
-    public T getTask(@NonNull String id) {
+    T getTask(@NonNull String id) {
         if (id.isEmpty()) {
             return null;
         }
@@ -90,13 +89,12 @@ class TaskDatabase<T extends BaseTask> {
         Cursor cursor = mTaskDatabase.itemForIdQuery(id);
 
         List<T> tasks = getTasksFromCursor(cursor);
+
         if (tasks.size() > 1) {
             throw new IllegalStateException("More than one task with the same id: " + id);
         }
-        if (!tasks.isEmpty()) {
-            return tasks.get(0);
-        }
-        return null;
+
+        return !tasks.isEmpty() ? tasks.get(0) : null;
     }
 
     /**
@@ -114,12 +112,13 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     @NonNull
-    public List<T> getAllTasks() {
+    List<T> getAllTasks() {
         Cursor cursor = mTaskDatabase.allItemsQuery();
 
         return getTasksFromCursor(cursor);
     }
 
+    @WorkerThread
     @NonNull
     private List<T> getTasksFromCursor(Cursor cursor) {
         List<T> tasks = new ArrayList<>();
@@ -159,7 +158,7 @@ class TaskDatabase<T extends BaseTask> {
      * if the insert fails, -1 will be returned.
      */
     @WorkerThread
-    public long insert(@NonNull T task) {
+    long insert(@NonNull T task) {
         // TODO: Do some logging or send it back! 2/10/16 [KV]
         long id = mTaskDatabase.insert(task);
         TaskLogger.getLogger().d("INSERT COMPLETE " + id);
@@ -182,17 +181,8 @@ class TaskDatabase<T extends BaseTask> {
      * task was inserted or updated at.
      */
     @WorkerThread
-    public long upsert(@NonNull T task) {
-        final SQLiteStatement stmt = mTaskDatabase.getUpsertStatement(task.getId());
-        long id;
-        synchronized (stmt) {
-            stmt.clearBindings();
-            TaskDatabaseOpenHelper.bindValues(stmt, task, mSerializer);
-            TaskLogger.getLogger().d("UPSERT: " + stmt.toString());
-            id = stmt.executeInsert();
-        }
-        TaskLogger.getLogger().d("UPSERT COMPLETE " + id);
-        return id;
+    boolean upsert(@NonNull T task) {
+        return mTaskDatabase.upsertItem(task);
     }
 
     /**
@@ -205,8 +195,8 @@ class TaskDatabase<T extends BaseTask> {
      * @return the number of tasks in the database.
      */
     @WorkerThread
-    public int count() {
-        return (int) mTaskDatabase.getCount();
+    long count() {
+        return mTaskDatabase.getCount();
     }
 
     // -----------------------------------------------------------------------------------------------------
@@ -225,7 +215,7 @@ class TaskDatabase<T extends BaseTask> {
      *             the database.
      */
     @WorkerThread
-    public void remove(@NonNull T task) {
+    void remove(@NonNull T task) {
         remove(task.getId());
     }
 
@@ -243,7 +233,7 @@ class TaskDatabase<T extends BaseTask> {
      *           anything.
      */
     @WorkerThread
-    public void remove(@Nullable String id) {
+    void remove(@Nullable String id) {
         if (id == null || id.isEmpty()) {
             // TODO: Do some logging or send it back! 2/10/16 [KV]
             // Logger.e(LOG_TAG, "called remove with null task id.");
@@ -252,11 +242,9 @@ class TaskDatabase<T extends BaseTask> {
         delete(id);
     }
 
+    @WorkerThread
     private void delete(String id) {
-        SQLiteStatement stmt = mTaskDatabase.getDeleteStatement(id);
-        stmt.execute();
-        // TODO: Do some logging or send it back! 2/10/16 [KV]
-        // Logger.d(LOG_TAG, "REMOVE COMPLETE: " + id);
+        mTaskDatabase.deleteItemForId(id);
     }
 
     /**
@@ -266,8 +254,9 @@ class TaskDatabase<T extends BaseTask> {
      * should be called from a {@link WorkerThread}.
      */
     @WorkerThread
-    public void removeAll() {
-        mTaskDatabase.removeAll();
+    void removeAll() {
+        mTaskDatabase.truncateDatabase();
+        mTaskDatabase.vacuumDatabase();
     }
     // </editor-fold>
 }

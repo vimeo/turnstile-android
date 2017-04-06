@@ -27,8 +27,6 @@ import android.database.DatabaseUtils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.vimeo.turnstile.utils.TaskLogger;
-
 
 /**
  * Helper class for {@link TaskDatabase} to generate
@@ -36,23 +34,14 @@ import com.vimeo.turnstile.utils.TaskLogger;
  */
 class SqlHelper {
 
-    private static final SqlProperty CREATE_AT_COLUMN = new SqlProperty("created_at", "DATETIME", -1);
-    // TODO: Add convenience for updated_at column 2/26/16 [KV]
-
-    private String insertStatement;
-    private String countStatement;
-
     private final String tableName;
-    private final String primaryKeyColumnName;
     private final SqlProperty[] properties;
     private final int columnCount;
 
-    SqlHelper(@NonNull String tableName,
-              @NonNull String primaryKeyColumnName, @NonNull SqlProperty[] columns) {
+    SqlHelper(@NonNull String tableName, @NonNull SqlProperty[] columns) {
         this.tableName = tableName;
         this.properties = columns.clone();
         this.columnCount = properties.length;
-        this.primaryKeyColumnName = primaryKeyColumnName;
     }
 
     @NonNull
@@ -60,8 +49,8 @@ class SqlHelper {
         return properties;
     }
 
-    static String create(String table, SqlProperty primaryKey, boolean createdColumn,
-                         SqlProperty... propertiesArray) {
+    static String createCreateStatement(@NonNull String table, @NonNull SqlProperty primaryKey,
+                                        @NonNull SqlProperty... propertiesArray) {
         StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
         builder.append(table).append(" (");
         builder.append(primaryKey.columnName).append(" ");
@@ -75,21 +64,13 @@ class SqlHelper {
             }
         }
 
-        if (createdColumn) {
-            builder.append(", `")
-                    .append(CREATE_AT_COLUMN.columnName)
-                    .append("` ")
-                    .append(CREATE_AT_COLUMN.type)
-                    .append(" DEFAULT CURRENT_TIMESTAMP");
-        }
-
         builder.append(" );");
-        TaskLogger.getLogger().d("CREATE: " + builder.toString());
+
         return builder.toString();
     }
 
-    static String drop(String tableToDrop) {
-        TaskLogger.getLogger().d("DROP: " + tableToDrop);
+    @NonNull
+    static String createDropStatement(@NonNull String tableToDrop) {
         return "DROP TABLE IF EXISTS " + tableToDrop;
     }
 
@@ -103,10 +84,17 @@ class SqlHelper {
 		           COALESCE('Susan Boyle', (SELECT name FROM Employee WHERE id = 1)),
 		           COALESCE((SELECT role FROM Employee WHERE id = 1), 'Benchwarmer'));
      */
-    String getUpsertStatement(@NonNull String id) {
+    @NonNull
+    static String createUpsertStatement(@NonNull String tableName,
+                                        @NonNull SqlProperty[] properties,
+                                        @NonNull SqlProperty primaryKey,
+                                        @NonNull String id) {
+        int columnCount = properties.length;
         id = DatabaseUtils.sqlEscapeString(id);
+
         StringBuilder builder = new StringBuilder("INSERT OR REPLACE INTO ").append(tableName);
         builder.append("(");
+
         for (int i = 0; i < columnCount; i++) {
             SqlProperty property = properties[i];
             if (i != 0) {
@@ -114,6 +102,7 @@ class SqlHelper {
             }
             builder.append(property.columnName);
         }
+
         builder.append(") VALUES(").append("?");
         // Start i at 1 to skip the id column, we don't need to coalesce on that because it will always be
         // the same - that's why there is just the ? in the append above.
@@ -125,7 +114,7 @@ class SqlHelper {
                     .append(" FROM ")
                     .append(tableName)
                     .append(" WHERE ")
-                    .append(primaryKeyColumnName)
+                    .append(primaryKey.columnName)
                     .append("=")
                     .append(id)
                     .append("))");
@@ -136,48 +125,27 @@ class SqlHelper {
     }
 
     // This has an OR IGNORE clause which will not insert if the value already exists
-    String getInsertStatement() {
-        if (insertStatement == null) {
-            StringBuilder builder = new StringBuilder("INSERT OR IGNORE INTO ").append(tableName);
-            builder.append("(");
-            for (int i = 0; i < columnCount; i++) {
-                SqlProperty property = properties[i];
-                if (i != 0) {
-                    builder.append(",");
-                }
-                builder.append(property.columnName);
+    @NonNull
+    String createInsertStatement() {
+        StringBuilder builder = new StringBuilder("INSERT OR IGNORE INTO ").append(tableName);
+        builder.append("(");
+        for (int i = 0; i < columnCount; i++) {
+            SqlProperty property = properties[i];
+            if (i != 0) {
+                builder.append(",");
             }
-            builder.append(") VALUES(");
-            for (int i = 0; i < columnCount; i++) {
-                if (i != 0) {
-                    builder.append(",");
-                }
-                builder.append("?");
+            builder.append(property.columnName);
+        }
+        builder.append(") VALUES(");
+        for (int i = 0; i < columnCount; i++) {
+            if (i != 0) {
+                builder.append(",");
             }
-            builder.append(")");
-            insertStatement = builder.toString();
+            builder.append("?");
         }
-        return insertStatement;
-    }
+        builder.append(")");
 
-    String getCountStatement() {
-        if (countStatement == null) {
-            countStatement = "SELECT COUNT(*) FROM " + tableName;
-        }
-        return countStatement;
-    }
-
-    String getDeleteStatement(String id) {
-        id = DatabaseUtils.sqlEscapeString(id);
-        return "DELETE FROM " + tableName + " WHERE " + primaryKeyColumnName + "=" + id;
-    }
-
-    String createTruncateStatement() {
-        return "DELETE FROM " + tableName;
-    }
-
-    static String createVacuumStatement() {
-        return "VACUUM";
+        return builder.toString();
     }
 
     static class SqlProperty {
