@@ -32,21 +32,9 @@ import android.support.annotation.Nullable;
  * Helper class for {@link TaskDatabase} to generate
  * sql queries and statements.
  */
-class SqlHelper {
+final class SqlHelper {
 
-    private final String tableName;
-    private final SqlProperty[] properties;
-    private final int columnCount;
-
-    SqlHelper(@NonNull String tableName, @NonNull SqlProperty[] columns) {
-        this.tableName = tableName;
-        this.properties = columns.clone();
-        this.columnCount = properties.length;
-    }
-
-    @NonNull
-    SqlProperty[] getProperties() {
-        return properties;
+    private SqlHelper() {
     }
 
     static String createCreateStatement(@NonNull String table, @NonNull SqlProperty primaryKey,
@@ -126,9 +114,10 @@ class SqlHelper {
 
     // This has an OR IGNORE clause which will not insert if the value already exists
     @NonNull
-    String createInsertStatement() {
+    static String createInsertStatement(@NonNull String tableName, @NonNull SqlProperty[] properties) {
         StringBuilder builder = new StringBuilder("INSERT OR IGNORE INTO ").append(tableName);
         builder.append("(");
+        int columnCount = properties.length;
         for (int i = 0; i < columnCount; i++) {
             SqlProperty property = properties[i];
             if (i != 0) {
@@ -159,7 +148,7 @@ class SqlHelper {
         @Nullable
         final String defaultValue;
 
-        SqlProperty(String columnName, String type, int columnIndex) {
+        SqlProperty(@NonNull String columnName, @NonNull String type, int columnIndex) {
             this(columnName, type, columnIndex, null);
         }
 

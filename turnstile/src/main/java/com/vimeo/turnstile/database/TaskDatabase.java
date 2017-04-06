@@ -28,6 +28,7 @@ import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
+import android.text.TextUtils;
 
 import com.vimeo.turnstile.BaseTask;
 import com.vimeo.turnstile.Serializer;
@@ -120,7 +121,7 @@ class TaskDatabase<T extends BaseTask> {
 
     @WorkerThread
     @NonNull
-    private List<T> getTasksFromCursor(Cursor cursor) {
+    private List<T> getTasksFromCursor(@NonNull Cursor cursor) {
         List<T> tasks = new ArrayList<>();
 
         try {
@@ -134,9 +135,7 @@ class TaskDatabase<T extends BaseTask> {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            // TODO: Do some logging or send it back! 2/10/16 [KV]
-            // We should be logging the fact that there was a failure. Either return nullable to let the
-            // caller handle the error or log it here if this guy knows about logging 2/26/16 [KV]
+            // TODO: Proper error logging 4/5/17 [AR]
         } finally {
             cursor.close();
         }
@@ -159,11 +158,7 @@ class TaskDatabase<T extends BaseTask> {
      */
     @WorkerThread
     long insert(@NonNull T task) {
-        // TODO: Do some logging or send it back! 2/10/16 [KV]
-        long id = mTaskDatabase.insert(task);
-        TaskLogger.getLogger().d("INSERT COMPLETE " + id);
-
-        return id;
+        return mTaskDatabase.insert(task);
     }
 
     /**
@@ -233,17 +228,16 @@ class TaskDatabase<T extends BaseTask> {
      *           anything.
      */
     @WorkerThread
-    void remove(@Nullable String id) {
-        if (id == null || id.isEmpty()) {
-            // TODO: Do some logging or send it back! 2/10/16 [KV]
-            // Logger.e(LOG_TAG, "called remove with null task id.");
+    void remove(@NonNull String id) {
+        if (TextUtils.isEmpty(id)) {
+            TaskLogger.getLogger().w("Warning, TaskDatabase.remove called with empty id.");
             return;
         }
         delete(id);
     }
 
     @WorkerThread
-    private void delete(String id) {
+    private void delete(@NonNull String id) {
         mTaskDatabase.deleteItemForId(id);
     }
 

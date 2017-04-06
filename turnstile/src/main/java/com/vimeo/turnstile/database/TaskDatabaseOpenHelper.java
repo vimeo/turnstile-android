@@ -70,18 +70,15 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     private final String mTableName;
     @NonNull
     private final SqlProperty mPrimaryKeyProperty;
-    @NonNull
-    private final SqlProperty[] mProperties;
     private final int mColumnCount;
     @NonNull
     private final Serializer<T> mSerializer;
 
     @NonNull
-    private SQLiteDatabase mSQLiteDatabase;
+    private SqlProperty[] mProperties;
 
     @NonNull
-    private SqlHelper mSqlHelper;
-
+    private SQLiteDatabase mSQLiteDatabase;
 
     TaskDatabaseOpenHelper(@NonNull Context context, @NonNull String name, @NonNull Serializer<T> serializer) {
         super(context, "db_" + name, null, DATABASE_VERSION);
@@ -92,7 +89,6 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         mSerializer = serializer;
 
         mSQLiteDatabase = getWritableDatabase();
-        mSqlHelper = new SqlHelper(mTableName, PROPERTIES);
     }
 
     private static <T extends BaseTask> void bindValues(@NonNull SQLiteStatement stmt,
@@ -158,8 +154,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             case 3:
                 // Pull tasks from the old database, createDropStatement, and recreate.
                 mSQLiteDatabase = db;
-                SqlProperty[] sqlProperties = {ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
-                mSqlHelper = new SqlHelper(mTableName, sqlProperties);
+                mProperties = new SqlProperty[]{ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
                 Cursor cursor = allItemsQuery();
                 List<T> oldTaskList = new ArrayList<>();
 
@@ -190,10 +185,10 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
                 cursor.close();
 
+                mProperties = PROPERTIES;
+
                 db.execSQL(SqlHelper.createDropStatement(mTableName));
                 onCreate(db);
-
-                mSqlHelper = new SqlHelper(mTableName, PROPERTIES);
 
                 for (T oldTask : oldTaskList) {
                     insert(oldTask);
@@ -212,7 +207,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     }
 
     long insert(@NonNull T task) {
-        String uncompiledStatement = mSqlHelper.createInsertStatement();
+        String uncompiledStatement = SqlHelper.createInsertStatement(mTableName, mProperties);
         SQLiteStatement insertStatement = mSQLiteDatabase.compileStatement(uncompiledStatement);
         insertStatement.clearBindings();
         bindValues(insertStatement, task, mSerializer);
@@ -224,19 +219,19 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
     @NonNull
     Cursor allItemsQuery() {
-        String[] props = sqlPropertiesToStringProperties(mSqlHelper.getProperties());
+        String[] props = sqlPropertiesToStringProperties(mProperties);
 
         return mSQLiteDatabase.query(mTableName, props, null, null, null, null, null);
     }
 
     Cursor itemForIdQuery(@NonNull String id) {
-        String[] props = sqlPropertiesToStringProperties(mSqlHelper.getProperties());
+        String[] props = sqlPropertiesToStringProperties(mProperties);
 
         return mSQLiteDatabase.query(mTableName, props, ID_COLUMN.columnName + "=?", new String[]{id}, null, null, null);
     }
 
     @NonNull
-    private static String[] sqlPropertiesToStringProperties(SqlProperty... sqlProperties) {
+    private static String[] sqlPropertiesToStringProperties(@NonNull SqlProperty... sqlProperties) {
         String[] props = new String[sqlProperties.length];
         for (int n = 0; n < sqlProperties.length; n++) {
             props[n] = sqlProperties[n].columnName;
