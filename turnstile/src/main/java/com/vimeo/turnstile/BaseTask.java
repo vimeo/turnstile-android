@@ -209,27 +209,23 @@ public abstract class BaseTask implements Serializable, Callable {
      * Unique identifier for this task
      */
     @NonNull
-//    @SerializedName("id")
     protected transient String mId;
 
     /**
      * The state this task is currently in. We default it to {@link TaskState#READY}
      */
-//    @SerializedName("state")
     protected transient TaskState mState = TaskState.READY;
 
     /**
      * The error that will be set when this task is in the {@link TaskState#ERROR} state.
      * It isn't set to null when it is executing again - so you can't rely on this having a null value.
      */
-//    @SerializedName("error")
     @Nullable
     protected transient TaskError mError;
 
     /**
      * The Unix Timestamp for when this task was first added
      */
-//    @SerializedName("created_at")
     protected transient long mCreatedTimeMillis;
 
     private transient volatile boolean mIsRunning;
