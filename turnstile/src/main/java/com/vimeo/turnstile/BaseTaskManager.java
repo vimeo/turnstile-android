@@ -125,18 +125,18 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
          * See {@link NetworkConditionsBasic} and {@link NetworkConditionsExtended}
          */
         @NonNull
-        public Builder withConditions(@NonNull Conditions conditions) {
+        public Builder<T> withConditions(@NonNull Conditions conditions) {
             mBuilderConditions = conditions;
             return this;
         }
 
         @NonNull
-        public Builder withNotificationIntent(@Nullable Intent notificationIntent) {
+        public Builder<T> withNotificationIntent(@Nullable Intent notificationIntent) {
             mBuilderNotificationIntent = notificationIntent;
             return this;
         }
 
-        public Builder withSerializer(@NonNull Serializer<T> serializer) {
+        public Builder<T> withSerializer(@NonNull Serializer<T> serializer) {
             mSerializer = serializer;
             return this;
         }
@@ -151,7 +151,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
          *                          is false.
          */
         @NonNull
-        public Builder withStartOnDeviceBoot(boolean startOnDeviceBoot) {
+        public Builder<T> withStartOnDeviceBoot(boolean startOnDeviceBoot) {
             mBuilderStartOnDeviceBoot = startOnDeviceBoot;
             return this;
         }
@@ -163,7 +163,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
          * To have the tasks run in series, call {@link #withSeriesExecution()}.
          */
         @NonNull
-        public Builder withMaxActiveTasks(int maxActiveTasks) {
+        public Builder<T> withMaxActiveTasks(int maxActiveTasks) {
             mMaxActiveTasks = maxActiveTasks;
             return this;
         }
@@ -172,7 +172,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
          * Set the {@link #mMaxActiveTasks} to 1. This will cause the tasks to
          * run in series in the order they're added.
          */
-        public Builder withSeriesExecution() {
+        public Builder<T> withSeriesExecution() {
             mMaxActiveTasks = 1;
             return this;
         }
