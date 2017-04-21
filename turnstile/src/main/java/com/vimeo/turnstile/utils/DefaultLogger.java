@@ -54,7 +54,7 @@ class DefaultLogger implements Logger {
                 exceptionMessage = error + " - " + exceptionMessage;
             }
             if (!exceptionMessage.isEmpty()) {
-                Log.e(LOG_TAG, exceptionMessage);
+                Log.e(LOG_TAG, exceptionMessage, exception);
             }
         }
     }

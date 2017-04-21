@@ -26,6 +26,11 @@ package com.vimeo.turnstile;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.vimeo.turnstile.utils.TaskLogger;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.Serializable;
 
 /**
@@ -37,6 +42,61 @@ import java.io.Serializable;
  */
 @SuppressWarnings("unused")
 public class TaskError implements Serializable {
+
+    public static final Serializer<TaskError> SERIALIZER_V0 = new Serializer<TaskError>() {
+        @NonNull
+        @Override
+        public String serialize(@NonNull TaskError object) {
+            throw new RuntimeException("This serializer does not support serializing to json");
+        }
+
+        @NonNull
+        @Override
+        public TaskError deserialize(@NonNull String string) throws Exception {
+            JSONObject jsonObject = new JSONObject(string);
+            String domain = jsonObject.getString("m_domain");
+            int code = jsonObject.getInt("m_code");
+            String message = jsonObject.getString("m_message");
+            Exception exception = (Exception) jsonObject.opt("m_exception");
+
+            return new TaskError(domain, code, message, exception);
+        }
+    };
+
+    public static final Serializer<TaskError> SERIALIZER_V1 = new Serializer<TaskError>() {
+
+        private static final String DOMAIN = "domain";
+        private static final String CODE = "code";
+        private static final String MESSAGE = "message";
+        private static final String EXCEPTION = "exception";
+
+        @NonNull
+        @Override
+        public String serialize(@NonNull TaskError object) {
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put(DOMAIN, object.mDomain);
+                jsonObject.put(CODE, object.mCode);
+                jsonObject.put(MESSAGE, object.mMessage);
+                jsonObject.put(EXCEPTION, object.mException);
+            } catch (JSONException e) {
+                TaskLogger.getLogger().e("Unable to serialize json object", e);
+            }
+            return jsonObject.toString();
+        }
+
+        @NonNull
+        @Override
+        public TaskError deserialize(@NonNull String string) throws Exception {
+            JSONObject jsonObject = new JSONObject(string);
+            String domain = jsonObject.getString(DOMAIN);
+            int code = jsonObject.getInt(CODE);
+            String message = jsonObject.getString(MESSAGE);
+            Exception exception = (Exception) jsonObject.opt(EXCEPTION);
+
+            return new TaskError(domain, code, message, exception);
+        }
+    };
 
     private static final long serialVersionUID = -6263900550627688906L;
 

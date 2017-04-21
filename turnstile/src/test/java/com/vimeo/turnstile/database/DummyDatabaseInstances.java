@@ -1,6 +1,7 @@
 package com.vimeo.turnstile.database;
 
 import com.vimeo.turnstile.dummy.UnitTestBaseTask;
+import com.vimeo.turnstile.utils.Utils;
 
 import org.robolectric.RuntimeEnvironment;
 
@@ -13,7 +14,7 @@ final class DummyDatabaseInstances {
     }
 
     public static TaskDatabase<UnitTestBaseTask> newDatabase() {
-        return new TaskDatabase<>(RuntimeEnvironment.application, "test", UnitTestBaseTask.class);
+        return new TaskDatabase<>(RuntimeEnvironment.application, "test", Utils.dummySerializer(UnitTestBaseTask.class));
     }
 
 }

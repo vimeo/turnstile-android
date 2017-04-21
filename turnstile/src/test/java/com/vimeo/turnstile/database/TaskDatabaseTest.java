@@ -88,13 +88,26 @@ public class TaskDatabaseTest extends BaseUnitTest {
         mDatabase.insert(task3);
         mDatabase.insert(task4);
 
-        List<UnitTestBaseTask> tasks = mDatabase.getTasks(null);
+        List<UnitTestBaseTask> tasks = mDatabase.getAllTasks();
 
         Assert.assertTrue(tasks.contains(task1));
         Assert.assertTrue(tasks.contains(task2));
         Assert.assertTrue(tasks.contains(task3));
         Assert.assertTrue(tasks.contains(task4));
 
+    }
+
+    @Test
+    public void testGetById_works() throws Exception {
+        clearDatabase();
+
+        UnitTestBaseTask task = UnitTestBaseTask.newTask();
+
+        mDatabase.insert(task);
+
+        UnitTestBaseTask retrievedTask = mDatabase.getTask(task.getId());
+
+        Assert.assertEquals(task, retrievedTask);
     }
 
     @Test

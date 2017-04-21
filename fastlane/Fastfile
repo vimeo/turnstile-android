@@ -30,12 +30,12 @@ platform :android do
 
   desc "test"
   lane :test do
-    
+
     # gotta do some setup before running gradle
     sh 'touch ../local.properties'
 
     # run the tests, but dont puke everywhere until the report is printed.
-    junit_report_path = "turnstile/build/test-results/debug/TEST-*"
+    junit_report_path = "turnstile/build/test-results/testDebugUnitTest/TEST-*"
     begin
       gradle(
         task: "turnstile:test sample:build"
