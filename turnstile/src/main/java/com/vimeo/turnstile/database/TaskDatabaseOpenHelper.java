@@ -152,6 +152,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                 break;
             case 3:
                 // Pull tasks from the old database, createDropStatement, and recreate.
+                TaskLogger.getLogger().d("Beginning upgrade from version 3");
                 mSQLiteDatabase = db;
 
                 SqlProperty idColumn = new SqlProperty("_id", "text", 0);
@@ -162,6 +163,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                 mProperties = new SqlProperty[]{idColumn, stateColumn, taskColumn, createAtColumn};
                 Cursor cursor = allItemsQuery();
                 List<T> oldTaskList = new ArrayList<>();
+
+                TaskLogger.getLogger().d("Reading old tasks out of the database");
 
                 while (cursor.moveToNext()) {
                     try {
@@ -182,6 +185,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
                         task.setTaskError(taskError);
 
                         oldTaskList.add(task);
+
+                        TaskLogger.getLogger().d("Adding old task to the new database: " + jsonObject.toString());
                     } catch (Exception e) {
                         TaskLogger.getLogger().e("Unable to parse object from database", e);
                     }
@@ -193,6 +198,8 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
                 db.execSQL(SqlHelper.createDropStatement(mTableName));
                 onCreate(db);
+
+                TaskLogger.getLogger().d("Recreating the table for update from version 3");
 
                 for (T oldTask : oldTaskList) {
                     insert(oldTask);
@@ -216,7 +223,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         insertStatement.clearBindings();
         bindValues(insertStatement, task, mSerializer);
 
-        TaskLogger.getLogger().d("INSERT: " + insertStatement.toString());
+        TaskLogger.getLogger().d("Executing INSERT: " + insertStatement.toString());
 
         return insertStatement.executeInsert();
     }
@@ -225,11 +232,15 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     Cursor allItemsQuery() {
         String[] props = SqlHelper.sqlPropertiesToStringProperties(mProperties);
 
+        TaskLogger.getLogger().d("Querying database for all items");
+
         return mSQLiteDatabase.query(mTableName, props, null, null, null, null, null);
     }
 
     Cursor itemForIdQuery(@NonNull String id) {
         String[] props = SqlHelper.sqlPropertiesToStringProperties(mProperties);
+
+        TaskLogger.getLogger().d("Querying database for item with id: " + id);
 
         return mSQLiteDatabase.query(mTableName, props, ID_COLUMN.columnName + "=?", new String[]{id}, null, null, null);
     }
@@ -242,12 +253,13 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         upsertStatement.clearBindings();
         bindValues(upsertStatement, task, mSerializer);
 
-        TaskLogger.getLogger().d("UPSERT: " + upsertStatement.toString());
+        TaskLogger.getLogger().d("Executing UPSERT: " + upsertStatement.toString());
 
         return upsertStatement.executeInsert() != NOT_FOUND;
     }
 
     boolean deleteItemForId(@NonNull String id) {
+        TaskLogger.getLogger().d("Deleting item from the database with id: " + id);
         return mSQLiteDatabase.delete(mTableName, ID_COLUMN.columnName + "=?", new String[]{id}) > 0;
     }
 
@@ -260,7 +272,10 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
     }
 
     long getCount() {
-        return DatabaseUtils.queryNumEntries(mSQLiteDatabase, mTableName);
+        long count = DatabaseUtils.queryNumEntries(mSQLiteDatabase, mTableName);
+        TaskLogger.getLogger().d("Database count: " + count);
+
+        return count;
     }
 }
 
