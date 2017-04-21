@@ -19,11 +19,11 @@ public class SimpleTaskManager extends BaseTaskManager<SimpleTask> {
         return sInstance;
     }
 
-    public static void initialize(@NonNull Builder builder) {
+    public static void initialize(@NonNull Builder<SimpleTask> builder) {
         sInstance = new SimpleTaskManager(builder);
     }
 
-    protected SimpleTaskManager(@NonNull Builder builder) {
+    protected SimpleTaskManager(@NonNull Builder<SimpleTask> builder) {
         super(builder);
     }
 
