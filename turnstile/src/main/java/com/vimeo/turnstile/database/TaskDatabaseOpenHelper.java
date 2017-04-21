@@ -126,7 +126,6 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
             return task;
         } catch (Exception e) {
-            e.printStackTrace();
             TaskLogger.getLogger().e("Unable to parse task from cursor", e);
             return null;
         }
@@ -184,7 +183,6 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
                         oldTaskList.add(task);
                     } catch (Exception e) {
-                        e.printStackTrace();
                         TaskLogger.getLogger().e("Unable to parse object from database", e);
                     }
                 }
@@ -251,7 +249,7 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
         String uncompiledStatement = SqlHelper.createUpsertStatement(mTableName, mProperties, ID_COLUMN, id);
         SQLiteStatement upsertStatement = mSQLiteDatabase.compileStatement(uncompiledStatement);
         upsertStatement.clearBindings();
-        TaskDatabaseOpenHelper.bindValues(upsertStatement, task, mSerializer);
+        bindValues(upsertStatement, task, mSerializer);
 
         TaskLogger.getLogger().d("UPSERT: " + upsertStatement.toString());
 

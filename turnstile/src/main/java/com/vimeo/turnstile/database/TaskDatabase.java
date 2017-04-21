@@ -134,8 +134,7 @@ class TaskDatabase<T extends BaseTask> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Proper error logging 4/5/17 [AR]
+            TaskLogger.getLogger().e("Unable to retrieve tasks from database", e);
         } finally {
             cursor.close();
         }
