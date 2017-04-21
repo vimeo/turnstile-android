@@ -137,6 +137,16 @@ final class SqlHelper {
         return builder.toString();
     }
 
+    @NonNull
+    static String[] sqlPropertiesToStringProperties(@NonNull SqlProperty... sqlProperties) {
+        String[] props = new String[sqlProperties.length];
+        for (int n = 0; n < sqlProperties.length; n++) {
+            props[n] = sqlProperties[n].columnName;
+        }
+
+        return props;
+    }
+
     static class SqlProperty {
 
         @NonNull

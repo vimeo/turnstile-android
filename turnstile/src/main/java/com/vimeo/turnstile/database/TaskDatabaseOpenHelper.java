@@ -223,26 +223,17 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
     @NonNull
     Cursor allItemsQuery() {
-        String[] props = sqlPropertiesToStringProperties(mProperties);
+        String[] props = SqlHelper.sqlPropertiesToStringProperties(mProperties);
 
         return mSQLiteDatabase.query(mTableName, props, null, null, null, null, null);
     }
 
     Cursor itemForIdQuery(@NonNull String id) {
-        String[] props = sqlPropertiesToStringProperties(mProperties);
+        String[] props = SqlHelper.sqlPropertiesToStringProperties(mProperties);
 
         return mSQLiteDatabase.query(mTableName, props, ID_COLUMN.columnName + "=?", new String[]{id}, null, null, null);
     }
 
-    @NonNull
-    private static String[] sqlPropertiesToStringProperties(@NonNull SqlProperty... sqlProperties) {
-        String[] props = new String[sqlProperties.length];
-        for (int n = 0; n < sqlProperties.length; n++) {
-            props[n] = sqlProperties[n].columnName;
-        }
-
-        return props;
-    }
 
     boolean upsertItem(@NonNull T task) {
         String id = task.getId();
