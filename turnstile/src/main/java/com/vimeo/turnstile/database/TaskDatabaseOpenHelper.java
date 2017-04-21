@@ -154,13 +154,19 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
             case 3:
                 // Pull tasks from the old database, createDropStatement, and recreate.
                 mSQLiteDatabase = db;
-                mProperties = new SqlProperty[]{ID_COLUMN, STATE_COLUMN, TASK_COLUMN, CREATE_AT_COLUMN};
+
+                SqlProperty idColumn = new SqlProperty("_id", "text", 0);
+                SqlProperty stateColumn = new SqlProperty("state", "text", 1, TaskState.READY.name());
+                SqlProperty taskColumn = new SqlProperty("task", "text", 2);
+                SqlProperty createAtColumn = new SqlProperty("created_at", "integer", 3);
+
+                mProperties = new SqlProperty[]{idColumn, stateColumn, taskColumn, createAtColumn};
                 Cursor cursor = allItemsQuery();
                 List<T> oldTaskList = new ArrayList<>();
 
                 while (cursor.moveToNext()) {
                     try {
-                        JSONObject jsonObject = new JSONObject(cursor.getString(TASK_COLUMN.columnIndex));
+                        JSONObject jsonObject = new JSONObject(cursor.getString(taskColumn.columnIndex));
                         jsonObject.remove("id");
                         jsonObject.remove("state");
                         jsonObject.remove("created_at");
@@ -171,9 +177,9 @@ class TaskDatabaseOpenHelper<T extends BaseTask> extends SQLiteOpenHelper {
 
                         T task = mSerializer.deserialize(jsonObject.toString());
 
-                        task.setId(cursor.getString(ID_COLUMN.columnIndex));
-                        task.setState(TaskState.valueOf(cursor.getString(STATE_COLUMN.columnIndex)));
-                        task.setCreatedAtTime(cursor.getLong(CREATE_AT_COLUMN.columnIndex));
+                        task.setId(cursor.getString(idColumn.columnIndex));
+                        task.setState(TaskState.valueOf(cursor.getString(stateColumn.columnIndex)));
+                        task.setCreatedAtTime(cursor.getLong(createAtColumn.columnIndex));
                         task.setTaskError(taskError);
 
                         oldTaskList.add(task);
