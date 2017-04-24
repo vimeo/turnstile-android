@@ -3,6 +3,7 @@ package com.vimeo.sample.tasks;
 import android.util.Log;
 
 import com.vimeo.turnstile.BaseTask;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +35,7 @@ public class SimpleTask extends BaseTask {
             onTaskProgress(80);
             Thread.sleep(TimeUnit.SECONDS.toMillis(1));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            TaskLogger.getLogger().e("Task interrupted", e);
         }
 
         Log.d(TAG, "Finishing task");

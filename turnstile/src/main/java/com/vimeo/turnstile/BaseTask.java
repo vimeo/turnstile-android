@@ -29,9 +29,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
-import com.google.gson.annotations.SerializedName;
 import com.vimeo.turnstile.conditions.Conditions;
-import com.vimeo.turnstile.models.TaskError;
+import com.vimeo.turnstile.utils.TaskLogger;
+import com.vimeo.turnstile.utils.UniqueIdGenerator;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -52,7 +52,7 @@ import java.util.concurrent.Callable;
  * <p/>
  * Created by kylevenn on 2/9/16.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("unused, WeakerAccess")
 public abstract class BaseTask implements Serializable, Callable {
 
     private static final long serialVersionUID = -2051421294839668480L;
@@ -209,30 +209,26 @@ public abstract class BaseTask implements Serializable, Callable {
      * Unique identifier for this task
      */
     @NonNull
-    @SerializedName("id")
-    protected String mId;
+    protected transient String mId;
 
     /**
      * The state this task is currently in. We default it to {@link TaskState#READY}
      */
-    @SerializedName("state")
-    protected TaskState mState = TaskState.READY;
+    protected transient TaskState mState = TaskState.READY;
 
     /**
      * The error that will be set when this task is in the {@link TaskState#ERROR} state.
      * It isn't set to null when it is executing again - so you can't rely on this having a null value.
      */
-    @SerializedName("error")
     @Nullable
-    protected TaskError mError;
+    protected transient TaskError mError;
 
     /**
      * The Unix Timestamp for when this task was first added
      */
-    @SerializedName("created_at")
-    protected final long mCreatedTimeMillis;
+    protected transient long mCreatedTimeMillis;
 
-    private volatile boolean mIsRunning;
+    private transient volatile boolean mIsRunning;
     // </editor-fold>
 
     // -----------------------------------------------------------------------------------------------------
@@ -335,6 +331,22 @@ public abstract class BaseTask implements Serializable, Callable {
      */
     public void setIsRetry(boolean isRetry) {
         mIsRetry = isRetry;
+    }
+
+    public void setId(@NonNull String id) {
+        mId = id;
+    }
+
+    public void setState(TaskState taskState) {
+        mState = taskState;
+    }
+
+    public void setCreatedAtTime(long millis) {
+        mCreatedTimeMillis = millis;
+    }
+
+    public void setTaskError(TaskError taskError) {
+        mError = taskError;
     }
     // </editor-fold>
 

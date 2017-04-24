@@ -1,4 +1,4 @@
-package com.vimeo.turnstile;
+package com.vimeo.turnstile.utils;
 
 import android.support.annotation.NonNull;
 

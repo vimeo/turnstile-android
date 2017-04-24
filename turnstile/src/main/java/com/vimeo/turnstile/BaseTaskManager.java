@@ -23,22 +23,27 @@
  */
 package com.vimeo.turnstile;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.vimeo.turnstile.BaseTask.TaskStateListener;
 import com.vimeo.turnstile.TaskConstants.ManagerEvent;
 import com.vimeo.turnstile.TaskConstants.TaskEvent;
 import com.vimeo.turnstile.conditions.Conditions;
 import com.vimeo.turnstile.conditions.NetworkConditions;
+import com.vimeo.turnstile.conditions.NetworkConditionsBasic;
 import com.vimeo.turnstile.conditions.NetworkConditionsExtended;
 import com.vimeo.turnstile.database.TaskCache;
 import com.vimeo.turnstile.database.TaskCallback;
-import com.vimeo.turnstile.models.TaskError;
-import com.vimeo.turnstile.preferences.BootPreferences;
+import com.vimeo.turnstile.utils.BootPreferences;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -67,8 +72,13 @@ import java.util.concurrent.ThreadFactory;
  * <p/>
  * Created by kylevenn on 2/9/16.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.Listener {
+
+    // -----------------------------------------------------------------------------------------------------
+    // Inner Classes
+    // -----------------------------------------------------------------------------------------------------
+    // <editor-fold desc="Inner Classes">
 
     /**
      * A class used to pass variables to the
@@ -76,34 +86,58 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      * These variables are used by the manager
      * internally.
      */
-    public static final class Builder {
+    public static final class Builder<T extends BaseTask> {
+
+        private static final int DEFAULT_MAX_ACTIVE_TASKS = 3;
 
         @NonNull
         final Context mBuilderContext;
         @NonNull
-        final Conditions mBuilderConditions;
+        Conditions mBuilderConditions;
         @Nullable
         Intent mBuilderNotificationIntent;
 
         boolean mBuilderStartOnDeviceBoot;
+        int mMaxActiveTasks;
+        @Nullable
+        Serializer<T> mSerializer;
 
         public Builder(@NonNull Context context) {
             mBuilderContext = context;
-            // Set the default to be the extended network util
-            mBuilderConditions = new NetworkConditionsExtended(mBuilderContext);
+            // Set defaults
             mBuilderStartOnDeviceBoot = false;
+            mMaxActiveTasks = DEFAULT_MAX_ACTIVE_TASKS;
+            mBuilderConditions = new Conditions() {
+                @Override
+                public boolean areConditionsMet() {
+                    return true;
+                }
+
+                @Override
+                public void setListener(@Nullable Listener listener) {
+
+                }
+            };
         }
 
-        public Builder(@NonNull Context context, @NonNull Conditions conditions) {
-            mBuilderContext = context;
-            // Set the default to be the extended network util
+        /**
+         * The {@link Conditions} by which we'd like to run our tasks.
+         * See {@link NetworkConditionsBasic} and {@link NetworkConditionsExtended}
+         */
+        @NonNull
+        public Builder<T> withConditions(@NonNull Conditions conditions) {
             mBuilderConditions = conditions;
-            mBuilderStartOnDeviceBoot = false;
+            return this;
         }
 
         @NonNull
-        public Builder withNotificationIntent(@Nullable Intent notificationIntent) {
+        public Builder<T> withNotificationIntent(@Nullable Intent notificationIntent) {
             mBuilderNotificationIntent = notificationIntent;
+            return this;
+        }
+
+        public Builder<T> withSerializer(@NonNull Serializer<T> serializer) {
+            mSerializer = serializer;
             return this;
         }
 
@@ -117,8 +151,29 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
          *                          is false.
          */
         @NonNull
-        public Builder withStartOnDeviceBoot(boolean startOnDeviceBoot) {
+        public Builder<T> withStartOnDeviceBoot(boolean startOnDeviceBoot) {
             mBuilderStartOnDeviceBoot = startOnDeviceBoot;
+            return this;
+        }
+
+        /**
+         * Set the number of tasks that can run concurrently. The default
+         * is {@link #DEFAULT_MAX_ACTIVE_TASKS}.
+         * <p>
+         * To have the tasks run in series, call {@link #withSeriesExecution()}.
+         */
+        @NonNull
+        public Builder<T> withMaxActiveTasks(int maxActiveTasks) {
+            mMaxActiveTasks = maxActiveTasks;
+            return this;
+        }
+
+        /**
+         * Set the {@link #mMaxActiveTasks} to 1. This will cause the tasks to
+         * run in series in the order they're added.
+         */
+        public Builder<T> withSeriesExecution() {
+            mMaxActiveTasks = 1;
             return this;
         }
     }
@@ -146,11 +201,15 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
             thread.setName(mThreadName);
             return thread;
         }
-
     }
+    // </editor-fold>
+
+    // -----------------------------------------------------------------------------------------------------
+    // Fields
+    // -----------------------------------------------------------------------------------------------------
+    // <editor-fold desc="Fields">
 
     private static final String LOG_TAG = "BaseTaskManager";
-    private static final int MAX_ACTIVE_TASKS = 3; // TODO: Should we up the maximum? 2/25/16 [KV]
 
     // ---- Executor Service ----
     private final ExecutorService mCachedExecutorService;
@@ -158,6 +217,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     private final static ConcurrentHashMap<String, Future> sTaskPool = new ConcurrentHashMap<>();
 
     private final boolean mStartOnDeviceBoot;
+    private final int mMaxActiveTasks;
 
     // ---- TaskCache ----
     @NonNull
@@ -174,6 +234,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
     @NonNull
     protected final TaskPreferences mTaskPreferences;
+    // </editor-fold>
 
     // ---- Optional Builder Fields ----
     // <editor-fold desc="Builder Fields">
@@ -190,23 +251,46 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Initialization
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Initialization
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Initialization">
-    protected BaseTaskManager(@NonNull Builder builder) {
+    @NonNull
+    private static <T> Serializer<T> defaultSerializer(@NonNull final Class<T> tClass) {
+        final Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .create();
+        return new Serializer<T>() {
+            @NonNull
+            @Override
+            public String serialize(@NonNull T object) {
+                return gson.toJson(object);
+            }
+
+            @NonNull
+            @Override
+            public T deserialize(@NonNull String string) throws Exception {
+                return gson.fromJson(string, tClass);
+            }
+        };
+    }
+
+    protected BaseTaskManager(@NonNull Builder<T> builder) {
         String taskName = getManagerName();
         Class<T> taskClass = getTaskClass();
         // Always use the application process - this context is a singleton itself which is the global
         // context of the process. Since the Service and App are in the same process, this shouldn't
         // be an issue.
         mContext = builder.mBuilderContext.getApplicationContext();
-        // TODO: Make it so network util is optional so that we might have no reliance on network 3/2/16 [KV]
         mConditions = builder.mBuilderConditions;
         mNotificationIntent = builder.mBuilderNotificationIntent;
         mStartOnDeviceBoot = builder.mBuilderStartOnDeviceBoot;
+        mMaxActiveTasks = builder.mMaxActiveTasks;
+        Serializer<T> serializer = builder.mSerializer;
+
+        if (serializer == null) {
+            serializer = defaultSerializer(getTaskClass());
+        }
 
         // Needs to be initialized with the manager name so that this instance is manager-specific
         mTaskPreferences = new TaskPreferences(mContext, taskName);
@@ -220,14 +304,14 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         // ---- Executor Service ----
         // Fixed pool holds exactly n threads. It will enqueue the remaining jobs handed to it.
         ThreadFactory namedThreadFactory = new NamedThreadFactory(taskName);
-        mCachedExecutorService = Executors.newFixedThreadPool(MAX_ACTIVE_TASKS, namedThreadFactory);
+        mCachedExecutorService = Executors.newFixedThreadPool(mMaxActiveTasks, namedThreadFactory);
 
         // ---- Persistence ----
         // Synchronous load from SQLite. Not very performant but required for simplified in-memory cache
-        mTaskCache = new TaskCache<>(mContext, taskName, taskClass);
+        mTaskCache = new TaskCache<>(mContext, taskName, serializer);
 
         // ---- Boot Handling ----
-        if (startOnDeviceBoot()) {
+        if (startOnDeviceBoot() && getServiceClass() != null) {
             BootPreferences.addServiceClass(mContext, getServiceClass());
         }
 
@@ -235,19 +319,19 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Abstract Methods
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Abstract Methods
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Abstract Methods">
 
     /**
-     * The subclass of {@link BaseTaskService}.
+     * Return the subclass of {@link BaseTaskService}. If this method returns <code>null</code>,
+     * then the tasks will not run in a {@link Service} and will therefore stop once
+     * the application associated with them is killed.
      *
-     * @return the Service class driving the task manager.
+     * @return the {@link BaseTaskService} class holding reference to the task manager.
      */
-    // TODO: Make this nullable and make it so a service isn't required for the task execution 3/2/16 [KV]
+    @Nullable
     protected abstract Class<? extends BaseTaskService> getServiceClass();
 
     /**
@@ -274,12 +358,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * TaskStateListener Implementation
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // TaskStateListener Implementation
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="TaskStateListener Implementation">
+
     private final TaskStateListener<T> mTaskListener = new TaskStateListener<T>(getTaskClass()) {
         @Override
         void onTaskStarted(@NonNull T task) {
@@ -328,11 +411,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     };
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Task Accessors
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Task Accessors
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Task Accessors">
 
     /**
@@ -417,7 +498,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
      * @return true if the task is queued, false otherwise.
      */
     public boolean isQueued(@NonNull String taskId) {
-        if (sTaskPool.size() > MAX_ACTIVE_TASKS && isInTaskPool(taskId)) {
+        if (sTaskPool.size() > mMaxActiveTasks && isInTaskPool(taskId)) {
             T task = mTaskCache.get(taskId);
             Future future = sTaskPool.get(taskId);
             if (task != null && future != null) {
@@ -522,7 +603,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         serviceCleanup(false);
     }
 
-    // Cancel all threads, truncate local db, TODO: delete call to server
+    /**
+     * Cancel all threads and remove them from local storage. This method will
+     * not clean up anything server side, so the caller of this method will have
+     * to clean up any additional resources.
+     */
     // TODO this doesn't trigger cancel events, instead it triggers success events
     public void cancelAll() {
         removeAllFromTaskPool();
@@ -530,6 +615,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         serviceCleanup(false);
     }
 
+    /**
+     * Retry the task which the provided taskId. This broadcasts a retry event.
+     */
     public void retryTask(@NonNull String taskId) {
         if (sTaskPool.containsKey(taskId)) {
             // If the task pool contains the id, that means it's already been retried
@@ -551,12 +639,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Task Pool Management (pause/resume)
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Task Pool Management (pause/resume)
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Task Pool Management (pause/resume)">
+
     protected static void removeAllFromTaskPool() {
         for (Future future : sTaskPool.values()) {
             future.cancel(true);
@@ -595,6 +682,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
     // Will resume if we're not already running - this is just a check that can be made to ensure everything
     // is running correctly
+
+    /**
+     * Resumes task execution if it's not already running.
+     * This is just a check that can be made to ensure everything is running correctly.
+     */
     public void resumeAllIfNecessary() {
         TaskLogger.getLogger().d("Resume all if necessary");
         // TODO: Make sure taskpool only ever includes currently running tasks 11/5/15 [KV]
@@ -607,6 +699,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         resumeAll();
     }
 
+    /**
+     * Retries every task that is marked as failed in the {@link TaskCache}.
+     */
     public void retryAllFailed() {
         for (Map.Entry<String, T> entry : getTasks().entrySet()) {
             if (entry.getValue().isError()) {
@@ -681,11 +776,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
 
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Service Management
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Service Management
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Service Management">
 
     /**
@@ -726,8 +819,10 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     protected void startService() {
         // Call this method when we know the service should be running
         // (we just added a task or we know there are unfinished tasks).
-        Intent startServiceIntent = new Intent(mContext, getServiceClass());
-        mContext.startService(startServiceIntent);
+        if (getServiceClass() != null) {
+            Intent startServiceIntent = new Intent(mContext, getServiceClass());
+            mContext.startService(startServiceIntent);
+        }
     }
 
     private void killService(boolean taskCompleted) {
@@ -739,16 +834,24 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Preferences
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Preferences
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Preferences">
+
+    /**
+     * Return true if this tasks should only run if the device is connected to wifi.
+     * This method should be used with {@link NetworkConditionsExtended}.
+     */
     public boolean wifiOnly() {
         return mTaskPreferences.wifiOnly();
     }
 
+    /**
+     * Set if tasks should only run if the device is connected to wifi.
+     * This must be used in unison with {@link NetworkConditionsExtended}.
+     * Call this method will trigger a call to {@link #resumeAllIfNecessary()}.
+     */
     public void setWifiOnly(boolean wifiOnly) {
         mTaskPreferences.setWifiOnly(wifiOnly);
         if (!wifiOnly) {
@@ -757,11 +860,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Network
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Network
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Network">
     @NonNull
     public final Conditions getConditions() {
@@ -786,12 +887,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Logging
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Logging
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Logging">
+
     protected void logSuccess(T task) {
         TaskLogger.getLogger().d("Task succeeded with id: " + task.getId());
     }
@@ -801,12 +901,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
     }
     // </editor-fold>
 
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Broadcast
-     * -----------------------------------------------------------------------------------------------------
-     */
+    // -----------------------------------------------------------------------------------------------------
+    // Broadcast
+    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Broadcast">
+
     private String getBroadcastString() {
         return TaskConstants.TASK_BROADCAST + "_" + getManagerName();
     }

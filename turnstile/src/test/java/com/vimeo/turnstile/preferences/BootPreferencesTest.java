@@ -3,6 +3,7 @@ package com.vimeo.turnstile.preferences;
 import android.content.Context;
 
 import com.vimeo.turnstile.BaseUnitTest;
+import com.vimeo.turnstile.utils.BootPreferences;
 
 import org.junit.Assert;
 import org.junit.Before;

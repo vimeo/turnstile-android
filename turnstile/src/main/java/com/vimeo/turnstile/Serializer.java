@@ -24,58 +24,32 @@
 package com.vimeo.turnstile;
 
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 /**
- * The logger holder
- * <p/>
- * Created by restainoa on 8/1/16.
+ * Interface that defines the spec for serializing
+ * and deserializing an object to and from a
+ * string representation.
  */
-public final class TaskLogger {
-
-    private TaskLogger() {
-    }
+public interface Serializer<T> {
 
     /**
-     * This is a generic logging interface which can be used for
-     * logging specific as well as general events fired throughout
-     * the task life cycle.
-     * <p/>
-     * Created by kylevenn on 12/8/15.
-     */
-    public interface Logger {
-
-        void e(String error);
-
-        void e(String error, Exception exception);
-
-        void d(String debug);
-
-        void i(String info);
-
-        void w(String warning);
-
-        void v(String verbose);
-    }
-
-    @NonNull
-    private static Logger sLogger = new DefaultLogger();
-
-    /**
-     * Sets your own Logger to be used by the library
-     * for logging. If you do not set one, by default
-     * the library will use {@link DefaultLogger} which
-     * uses the Android {@link Log} class.
+     * Serialize the object to a string.
      *
-     * @param logger the logger to use for logging.
+     * @param object the object to serialize.
+     * @return the string that was created.
      */
-    public static void setLogger(@NonNull Logger logger) {
-        sLogger = logger;
-    }
-
     @NonNull
-    public static Logger getLogger() {
-        return sLogger;
-    }
+    String serialize(@NonNull T object);
+
+    /**
+     * Deserialize the object from a string.
+     *
+     * @param string the string to deserialize.
+     * @return the object that was created.
+     * @throws Exception throws an exception if
+     *                   deserialization fails.
+     */
+    @NonNull
+    T deserialize(@NonNull String string) throws Exception;
 
 }

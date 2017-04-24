@@ -13,9 +13,9 @@ import android.widget.Toast;
 import com.vimeo.sample.tasks.SimpleTask;
 import com.vimeo.sample.tasks.SimpleTaskManager;
 import com.vimeo.turnstile.BaseTaskManager.TaskEventListener;
-import com.vimeo.turnstile.UniqueIdGenerator;
+import com.vimeo.turnstile.utils.UniqueIdGenerator;
 import com.vimeo.turnstile.database.TaskCallback;
-import com.vimeo.turnstile.models.TaskError;
+import com.vimeo.turnstile.TaskError;
 
 public class MainActivity extends AppCompatActivity {
 

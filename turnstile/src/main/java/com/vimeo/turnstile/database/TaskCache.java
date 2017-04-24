@@ -31,7 +31,8 @@ import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 
 import com.vimeo.turnstile.BaseTask;
-import com.vimeo.turnstile.TaskLogger;
+import com.vimeo.turnstile.Serializer;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,9 +76,9 @@ public final class TaskCache<T extends BaseTask> {
     }
 
     @WorkerThread
-    public TaskCache(@NonNull Context context, @NonNull String taskName, @NonNull Class<T> taskClass) {
-        mDatabase = new TaskDatabase<>(context, taskName, taskClass);
-        List<T> tasks = mDatabase.getTasks(null);
+    public TaskCache(@NonNull Context context, @NonNull String taskName, @NonNull Serializer<T> serializer) {
+        mDatabase = new TaskDatabase<>(context, taskName, serializer);
+        List<T> tasks = mDatabase.getAllTasks();
         for (T task : tasks) {
             mTaskMap.put(task.getId(), task);
         }

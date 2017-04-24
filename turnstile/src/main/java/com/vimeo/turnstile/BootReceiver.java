@@ -29,7 +29,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.RequiresPermission;
 
-import com.vimeo.turnstile.preferences.BootPreferences;
+import com.vimeo.turnstile.utils.BootPreferences;
+import com.vimeo.turnstile.utils.TaskLogger;
 
 /**
  * The express purpose of this class is to register for
