@@ -38,6 +38,14 @@ android {
     buildTypes {
         release {
         }
+        debug {
+            debuggable true
+        }
+        adhoc.initWith(buildTypes.release)
+        dev.initWith(buildTypes.adhoc)
+        dev {
+            minifyEnabled false
+        }
     }
 }
 
