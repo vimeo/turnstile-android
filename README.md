@@ -6,6 +6,7 @@ Turnstile is an abstract task queue that supports long running, parallel task ex
 * [Use Cases](#use-cases)
 * [Getting Started](#getting-started)
     - [Gradle](#gradle)
+    - [JitPack](#jitpack)
     - [Submodule](#submodule)
 * [How Does It Work?](#how-does-it-work)
 * [How to Use Turnstile](#how-to-use-turnstile)  
@@ -46,8 +47,18 @@ Specify the dependency in your `build.gradle` file (make sure `jcenter()` is inc
 compile 'com.vimeo.turnstile:turnstile:0.8.0'
 ```
 
+#### JitPack
+repositories {
+    ...
+    maven { url 'https://jitpack.io' }
+}
+
+To use the latest build: compile 'com.github.vimeo:turnstile-android:SNAPSHOT'
+
+To use a build from a specific commit: compile 'com.github.vimeo:turnstile-android:COMMIT_HASH'
+
 #### Submodule
-We recommend using JCenter, but if you'd like to use the library as a submodule:
+We recommend using JCenter or JitPack, but if you'd like to use the library as a submodule:
 ```
 git submodule add git@github.com:vimeo/turnstile-android.git
 ```

@@ -1,1 +1,5 @@
-include ':turnstile', ':sample'
+include ':turnstile'
+
+if (!System.env.JITPACK) {
+    include ':sample'
+}
