@@ -48,14 +48,16 @@ compile 'com.vimeo.turnstile:turnstile:0.8.0'
 ```
 
 #### JitPack
+```groovy
 repositories {
     ...
     maven { url 'https://jitpack.io' }
 }
+```
 
-To use the latest build: compile 'com.github.vimeo:turnstile-android:SNAPSHOT'
+To use the latest build: compile `com.github.vimeo:turnstile-android:SNAPSHOT`
 
-To use a build from a specific commit: compile 'com.github.vimeo:turnstile-android:COMMIT_HASH'
+To use a build from a specific commit: compile `com.github.vimeo:turnstile-android:COMMIT_HASH`
 
 #### Submodule
 We recommend using JCenter or JitPack, but if you'd like to use the library as a submodule:
