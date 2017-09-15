@@ -55,9 +55,9 @@ repositories {
 }
 ```
 
-To use the latest build: compile `com.github.vimeo:turnstile-android:SNAPSHOT`
+To use the latest build: `compile 'com.github.vimeo:turnstile-android:SNAPSHOT'`
 
-To use a build from a specific commit: compile `com.github.vimeo:turnstile-android:COMMIT_HASH`
+To use a build from a specific commit: `compile 'com.github.vimeo:turnstile-android:COMMIT_HASH`
 
 #### Submodule
 We recommend using JCenter or JitPack, but if you'd like to use the library as a submodule:
