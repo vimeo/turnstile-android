@@ -32,6 +32,7 @@ import android.support.annotation.RequiresPermission;
 import com.vimeo.turnstile.utils.BootPreferences;
 import com.vimeo.turnstile.utils.TaskLogger;
 
+
 /**
  * The express purpose of this class is to register for
  * the device startup event. This is to allow for starting
