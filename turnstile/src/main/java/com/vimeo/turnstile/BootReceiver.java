@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresPermission;
+import android.util.Log;
 
 import com.vimeo.turnstile.utils.BootPreferences;
 import com.vimeo.turnstile.utils.TaskLogger;
@@ -46,7 +47,7 @@ public final class BootReceiver extends BroadcastReceiver {
     @Override
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     public void onReceive(final Context context, Intent intent) {
-        android.os.Debug.waitForDebugger();
+//        android.os.Debug.waitForDebugger();
         if (intent != null && Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             TaskLogger.getLogger().d("BootReceiver onReceive for TaskManager");
             // Reading SharedPreferences can take a little time initially since it requires reading from disk.
@@ -60,11 +61,13 @@ public final class BootReceiver extends BroadcastReceiver {
                         Intent startServiceIntent = new Intent(context, serviceClass);
                         // The service will be started on the main thread 3/2/16 [KV]
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Log.e("SCOOT", "start foreground " + serviceClass.getSimpleName());
                             // On Android O, we have to say that this services will
                             // be a foreground service. It has the ANR amount of time
                             // to call "startForeground" internally.
                             context.startForegroundService(startServiceIntent);
                         } else {
+                            Log.e("SCOOT", "start service " + serviceClass.getSimpleName());
                             context.startService(startServiceIntent);
                         }
                     }
