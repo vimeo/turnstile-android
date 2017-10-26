@@ -27,6 +27,7 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.annotation.RequiresPermission;
 
 import com.vimeo.turnstile.utils.BootPreferences;
@@ -58,7 +59,14 @@ public final class BootReceiver extends BroadcastReceiver {
                         TaskLogger.getLogger().d("Starting service: " + serviceClass.getSimpleName());
                         Intent startServiceIntent = new Intent(context, serviceClass);
                         // The service will be started on the main thread 3/2/16 [KV]
-                        context.startService(startServiceIntent);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            // On Android O, we have to say that this services will
+                            // be a foreground service. It has the ANR amount of time
+                            // to call "startForeground" internally.
+                            context.startForegroundService(startServiceIntent);
+                        } else {
+                            context.startService(startServiceIntent);
+                        }
                     }
                 }
             }).start();
