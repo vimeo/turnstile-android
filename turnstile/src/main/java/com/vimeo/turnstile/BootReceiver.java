@@ -59,16 +59,29 @@ public final class BootReceiver extends BroadcastReceiver {
                     for (Class serviceClass : BootPreferences.getServiceClasses(context)) {
                         TaskLogger.getLogger().d("Starting service: " + serviceClass.getSimpleName());
                         Intent startServiceIntent = new Intent(context, serviceClass);
-                        // The service will be started on the main thread 3/2/16 [KV]
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Log.e("SCOOT", "start foreground " + serviceClass.getSimpleName());
-                            // On Android O, we have to say that this services will
-                            // be a foreground service. It has the ANR amount of time
-                            // to call "startForeground" internally.
-                            context.startForegroundService(startServiceIntent);
-                        } else {
-                            Log.e("SCOOT", "start service " + serviceClass.getSimpleName());
-                            context.startService(startServiceIntent);
+                        try {
+                            // The service will be started on the main thread 3/2/16 [KV]
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                Log.e("SCOOT", "start foreground " + serviceClass.getSimpleName());
+                                // On Android O, we have to say that this services will
+                                // be a foreground service. It has the ANR amount of time
+                                // to call "startForeground" internally.
+                                context.startForegroundService(startServiceIntent);
+                            } else {
+                                Log.e("SCOOT", "start service " + serviceClass.getSimpleName());
+                                context.startService(startServiceIntent);
+                            }
+                        } catch (Exception e) {
+//                            if (e instanceof IllegalStateException
+//                                    || e.getClass().getSimpleName().contains("RemoteServiceException")) {
+//                                e.printStackTrace();
+//                                Log.e("SCOOT", "WE CAUGHT IT!!!!");
+//                            } else {
+//                                throw e;
+//                            }
+
+                            e.printStackTrace();
+                            Log.e("SCOOT", "WE CAUGHT IT!!!!");
                         }
                     }
                 }
