@@ -45,6 +45,7 @@ public final class BootReceiver extends BroadcastReceiver {
     @Override
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     public void onReceive(final Context context, Intent intent) {
+        android.os.Debug.waitForDebugger();
         if (intent != null && Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             TaskLogger.getLogger().d("BootReceiver onReceive for TaskManager");
             // Reading SharedPreferences can take a little time initially since it requires reading from disk.
