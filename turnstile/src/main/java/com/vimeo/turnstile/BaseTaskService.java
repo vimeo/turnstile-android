@@ -25,10 +25,13 @@ package com.vimeo.turnstile;
 
 import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.vimeo.turnstile.BaseTaskManager.ManagerEventListener;
 import com.vimeo.turnstile.BaseTaskManager.TaskEventListener;
@@ -51,9 +54,50 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
 
     protected BaseTaskManager<T> mTaskManager;
 
-    // -----------------------------------------------------------------------------------------------------
-    // Lifecycle
-    // -----------------------------------------------------------------------------------------------------
+    // <editor-fold desc="Init">
+    private static final String INTENT_FROM_BOOT = "INTENT_FROM_BOOT";
+
+    private boolean mFromBoot;
+
+    protected final boolean isFromBoot() {
+        return mFromBoot;
+    }
+
+    public static void startService(final Context context,
+                                    final Class serviceClass,
+                                    boolean fromBoot) {
+
+        Intent startServiceIntent = new Intent(context, serviceClass);
+        startServiceIntent.putExtra(INTENT_FROM_BOOT, fromBoot);
+
+        //noinspection ClassReferencesSubclass,unchecked
+        if (serviceClass.isAssignableFrom(NotificationTaskService.class)) {
+            return;
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Log.e("SCOOT", "start foreground " + serviceClass.getSimpleName());
+                // On Android O, we have to say that this services will
+                // be a foreground service. It has the ANR amount of time
+                // to call "startForeground" internally.
+                context.startForegroundService(startServiceIntent);
+            } else {
+                Log.e("SCOOT", "start service " + serviceClass.getSimpleName());
+                context.startService(startServiceIntent);
+            }
+        } catch (Exception e) {
+            //noinspection CallToPrintStackTrace
+            e.printStackTrace();
+            Log.e("SCOOT", "WE CAUGHT IT!!!!");
+        }
+    }
+
+//    public static void startService(final Context context, final Class serviceClass) {
+//        startService(context, serviceClass, false);
+//    }
+    // </editor-fold>
+
     // <editor-fold desc="Lifecycle">
     @Override
     public void onCreate() {
@@ -70,6 +114,8 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
     @Override
     public final int onStartCommand(Intent intent, int flags, int startId) {
         TaskLogger.getLogger().d("Task Service onStartCommand");
+
+        mFromBoot = intent.getBooleanExtra(INTENT_FROM_BOOT, false);
 
         // TODO: This is going to get called A LOT because we issue startService commands for every added task as
         // well as every single state change. Is that bad? We can make optimizations if performance is an issue or
@@ -104,9 +150,6 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
     }
     // </editor-fold>
 
-    // -----------------------------------------------------------------------------------------------------
-    // Abstract methods
-    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Abstract methods">
     protected abstract void handleAdditionalEvents(String event);
 
@@ -114,9 +157,6 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
 
     // </editor-fold>
 
-    // -----------------------------------------------------------------------------------------------------
-    // No-ops that can be overridden
-    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="No-ops that can be overridden">
     protected void onKillService() {
 
@@ -147,9 +187,6 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
     }
     // </editor-fold>
 
-    // -----------------------------------------------------------------------------------------------------
-    // Service
-    // -----------------------------------------------------------------------------------------------------
     // <editor-fold desc="Service">
     private void killService() {
         // Service should be dead
@@ -159,17 +196,11 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
     }
     // </editor-fold>
 
-
-    /*
-     * -----------------------------------------------------------------------------------------------------
-     * Receivers
-     * -----------------------------------------------------------------------------------------------------
-     */
     // <editor-fold desc="Receivers">
     private final TaskEventListener<T> mTaskEventListener = new TaskEventListener<T>() {
         @Override
         public void onProgress(@NonNull T task, int progress) {
-           onTaskProgress(task, progress);
+            onTaskProgress(task, progress);
         }
 
         @Override

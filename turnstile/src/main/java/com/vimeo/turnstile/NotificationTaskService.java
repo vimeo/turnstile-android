@@ -166,6 +166,9 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
 
     @Override
     protected void onKillService() {
+        if (isFromBoot()) {
+            showNotification();
+        }
         mNotificationShowing = false;
         super.onKillService();
     }
