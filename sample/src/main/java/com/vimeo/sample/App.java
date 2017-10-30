@@ -1,6 +1,9 @@
 package com.vimeo.sample;
 
+import android.app.AlarmManager;
 import android.app.Application;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 
 import com.vimeo.sample.tasks.SimpleConditions;
@@ -40,5 +43,17 @@ public class App extends Application {
         taskTaskManagerBuilder.withNotificationIntent(intent);
 
         SimpleTaskManager.initialize(taskTaskManagerBuilder);
+
+        // Uncomment to test adding a task when the app isn't in the foreground.
+//        startAlarmBroadcastReceiver(this, 5000);
+    }
+
+    public static void startAlarmBroadcastReceiver(Context context, long delay) {
+        Intent _intent = new Intent(context, TestAlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, _intent, 0);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        // Remove any previous pending intent.
+        alarmManager.cancel(pendingIntent);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delay, pendingIntent);
     }
 }

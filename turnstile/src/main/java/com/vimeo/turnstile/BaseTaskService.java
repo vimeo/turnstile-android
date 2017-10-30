@@ -25,7 +25,9 @@ package com.vimeo.turnstile;
 
 import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -48,6 +50,44 @@ import com.vimeo.turnstile.utils.TaskLogger;
  * Created by kylevenn on 3/1/16.
  */
 public abstract class BaseTaskService<T extends BaseTask> extends Service {
+
+    // <editor-fold desc="Start service">
+
+    /**
+     * Start the BaseTaskService represented by the given <code>serviceClass</code>.
+     * This method will no-op if:
+     * <ul>
+     * <li>The given <code>serviceClass</code> is null.</li>
+     * <li>The {@link Service#startService(Intent)} call throws an exception on
+     * a device running Android O.</li>
+     * </ul>
+     *
+     * This method should eventually be replaced with logic to start the service
+     * via {@link Service#startForegroundService(Intent)} if it will show a
+     * notification.
+     *
+     * @return if the service was actually started.
+     */
+    public static boolean startTaskService(@NonNull Context context, @Nullable Class serviceClass) {
+        if (serviceClass == null) {
+            TaskLogger.getLogger().d("Start service failed. The provided serviceClass was null.");
+            return false;
+        }
+
+        TaskLogger.getLogger().d("Starting service: " + serviceClass.getSimpleName());
+        try {
+            Intent startServiceIntent = new Intent(context, serviceClass);
+            context.startService(startServiceIntent);
+        } catch (Exception e) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                TaskLogger.getLogger().e("Start service failed with exception: " + e.getMessage());
+                return false;
+            }
+            throw e;
+        }
+        return true;
+    }
+    // </editor-fold>
 
     protected BaseTaskManager<T> mTaskManager;
 
@@ -169,7 +209,7 @@ public abstract class BaseTaskService<T extends BaseTask> extends Service {
     private final TaskEventListener<T> mTaskEventListener = new TaskEventListener<T>() {
         @Override
         public void onProgress(@NonNull T task, int progress) {
-           onTaskProgress(task, progress);
+            onTaskProgress(task, progress);
         }
 
         @Override

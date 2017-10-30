@@ -28,6 +28,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.RequiresPermission;
+import android.widget.Toast;
 
 import com.vimeo.turnstile.utils.BootPreferences;
 import com.vimeo.turnstile.utils.TaskLogger;
@@ -46,6 +47,7 @@ public final class BootReceiver extends BroadcastReceiver {
     @Override
     @RequiresPermission(Manifest.permission.RECEIVE_BOOT_COMPLETED)
     public void onReceive(final Context context, Intent intent) {
+        Toast.makeText(context, "Boot received", Toast.LENGTH_LONG).show();
         if (intent != null && Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             TaskLogger.getLogger().d("BootReceiver onReceive for TaskManager");
             // Reading SharedPreferences can take a little time initially since it requires reading from disk.
@@ -55,10 +57,8 @@ public final class BootReceiver extends BroadcastReceiver {
                 @Override
                 public void run() {
                     for (Class serviceClass : BootPreferences.getServiceClasses(context)) {
-                        TaskLogger.getLogger().d("Starting service: " + serviceClass.getSimpleName());
-                        Intent startServiceIntent = new Intent(context, serviceClass);
                         // The service will be started on the main thread 3/2/16 [KV]
-                        context.startService(startServiceIntent);
+                        BaseTaskService.startTaskService(context, serviceClass);
                     }
                 }
             }).start();
