@@ -816,13 +816,18 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         }
     }
 
+    /**
+     * This method will start the {@link BaseTaskService} based on the
+     * {@link #getServiceClass()}.
+     * This method is called when we know the service should be running.
+     * Examples of this would include:
+     * <ol>
+     * <li>When a task is added.</li>
+     * <li>We know there are unfinished tasks in the queue.</li>
+     * </ol>
+     */
     protected void startService() {
-        // Call this method when we know the service should be running
-        // (we just added a task or we know there are unfinished tasks).
-        if (getServiceClass() != null) {
-            Intent startServiceIntent = new Intent(mContext, getServiceClass());
-            mContext.startService(startServiceIntent);
-        }
+        BaseTaskService.startTaskService(mContext, getServiceClass());
     }
 
     private void killService(boolean taskCompleted) {

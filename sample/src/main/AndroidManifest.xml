@@ -21,6 +21,8 @@
             android:name=".tasks.SimpleTaskService"
             android:enabled="true"
             android:exported="false"/>
+
+        <receiver android:name=".TestAlarmReceiver"/>
     </application>
 
 </manifest>

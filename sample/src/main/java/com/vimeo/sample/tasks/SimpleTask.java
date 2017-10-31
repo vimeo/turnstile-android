@@ -25,15 +25,18 @@ public class SimpleTask extends BaseTask {
 
         try {
             // Sleep for 5 seconds to simulate work being done
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            int totalSleepDuration = 10;
+            int sleepIncrements = 5;
+            int incrementalSleepDuration = totalSleepDuration / sleepIncrements;
+            Thread.sleep(TimeUnit.SECONDS.toMillis(incrementalSleepDuration));
             onTaskProgress(20);
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(incrementalSleepDuration));
             onTaskProgress(40);
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(incrementalSleepDuration));
             onTaskProgress(60);
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(incrementalSleepDuration));
             onTaskProgress(80);
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(incrementalSleepDuration));
         } catch (InterruptedException e) {
             TaskLogger.getLogger().e("Task interrupted", e);
         }

@@ -32,6 +32,7 @@ import android.support.annotation.RequiresPermission;
 import com.vimeo.turnstile.utils.BootPreferences;
 import com.vimeo.turnstile.utils.TaskLogger;
 
+
 /**
  * The express purpose of this class is to register for
  * the device startup event. This is to allow for starting
@@ -54,10 +55,8 @@ public final class BootReceiver extends BroadcastReceiver {
                 @Override
                 public void run() {
                     for (Class serviceClass : BootPreferences.getServiceClasses(context)) {
-                        TaskLogger.getLogger().d("Starting service: " + serviceClass.getSimpleName());
-                        Intent startServiceIntent = new Intent(context, serviceClass);
                         // The service will be started on the main thread 3/2/16 [KV]
-                        context.startService(startServiceIntent);
+                        BaseTaskService.startTaskService(context, serviceClass);
                     }
                 }
             }).start();
