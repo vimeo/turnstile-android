@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Sample</string>
     <string name="notification_click">Notification clicked!</string>
+    <string name="notification_channel_name">Sample Channel</string>
+    <string name="notification_channel_description">Sample Channel Description</string>
     <string name="started_text">Started task, id: %1$s</string>
     <string name="added_text">Added task, id: %1$s</string>
     <string name="result_text">Task completed, id: %1$s</string>

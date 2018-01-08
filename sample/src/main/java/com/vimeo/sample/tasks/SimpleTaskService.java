@@ -6,6 +6,8 @@ import com.vimeo.turnstile.NotificationTaskService;
 
 public class SimpleTaskService extends NotificationTaskService<SimpleTask> {
 
+    private static final String SAMPLE_NOTIFICATION_CHANNEL_ID = "turnstile-notifications-channel";
+
     @Override
     protected void handleAdditionalEvents(String event) {
 
@@ -43,6 +45,21 @@ public class SimpleTaskService extends NotificationTaskService<SimpleTask> {
     @Override
     protected int getNetworkNotificationMessageStringRes() {
         return R.string.network_problems;
+    }
+
+    @Override
+    protected String getNotificationChannelId() {
+        return SAMPLE_NOTIFICATION_CHANNEL_ID;
+    }
+
+    @Override
+    protected int getNotificationChannelName() {
+        return R.string.notification_channel_name;
+    }
+
+    @Override
+    protected int getNotificationChannelDescription() {
+        return R.string.notification_channel_description;
     }
 
     @Override
