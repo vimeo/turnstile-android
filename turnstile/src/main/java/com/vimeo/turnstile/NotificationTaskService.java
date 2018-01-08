@@ -152,6 +152,9 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
 
     /**
      * The notification channel name.
+     * Starting with Android Oreo, all notification must be grouped into channels,
+     * allowing the user to customize notification at a more granular level.
+     * This text will appear in the system application settings screen.
      *
      * @return the string resource for the notification channel name.
      */
@@ -160,6 +163,9 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
 
     /**
      * The notification channel description.
+     * Starting with Android Oreo, all notification must be grouped into channels,
+     * allowing the user to customize notification at a more granular level.
+     * This text will appear in the system application settings screen.
      *
      * @return the string resource for the notification channel description.
      */
