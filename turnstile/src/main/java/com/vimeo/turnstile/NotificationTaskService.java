@@ -25,13 +25,19 @@
 package com.vimeo.turnstile;
 
 import android.app.Notification;
+import android.app.Notification.Builder;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.os.Build;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.PluralsRes;
+import android.support.annotation.RequiresApi;
 import android.support.annotation.StringRes;
 
 /**
@@ -41,6 +47,8 @@ import android.support.annotation.StringRes;
  * Created by zetterstromk on 8/10/16.
  */
 public abstract class NotificationTaskService<T extends BaseTask> extends BaseTaskService<T> {
+
+    private static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "turnstile_notification_channel";
 
     /**
      * Unique id for the notification. We use it on notification start and to cancel it.
@@ -143,6 +151,22 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
     protected abstract int getProgressNotificationTitleStringRes();
 
     /**
+     * The notification channel name.
+     *
+     * @return the string resource for the notification channel name.
+     */
+    @StringRes
+    protected abstract int getNotificationChannelName();
+
+    /**
+     * The notification channel description.
+     *
+     * @return the string resource for the notification channel description.
+     */
+    @StringRes
+    protected abstract int getNotificationChannelDescription();
+
+    /**
      * The icon for the progress notification.
      *
      * @return the id of the drawable to use for the progress notification.
@@ -230,7 +254,15 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
      * Show a notification while this service is running.
      */
     protected void setupNotification() {
-        mProgressNotificationBuilder = new Notification.Builder(this).setSmallIcon(getProgressIconDrawable())
+        if (VERSION.SDK_INT >= VERSION_CODES.O) {
+            createChannel();
+            mProgressNotificationBuilder = new Builder(this, DEFAULT_NOTIFICATION_CHANNEL_ID);
+        } else {
+            mProgressNotificationBuilder = new Builder(this);
+        }
+
+        mProgressNotificationBuilder
+                .setSmallIcon(getProgressIconDrawable())
                 .setTicker(getString(R.string.notification_started))
                 .setProgress(100, 0, true)
                 // Example: "Uploading video"
@@ -280,9 +312,17 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
      * the current notification will be updated.
      */
     private void showOrUpdateNotificationFinish() {
-        Notification.Builder builder = new Notification.Builder(this)
-                // Example: "Upload finished"
+        final Notification.Builder builder;
+        if (VERSION.SDK_INT >= VERSION_CODES.O) {
+            createChannel();
+            builder = new Builder(this, DEFAULT_NOTIFICATION_CHANNEL_ID);
+        } else {
+            builder = new Builder(this);
+        }
+
+         builder
                 .setTicker(mFinishedNotificationTitleString)
+                 // Example: "Upload finished"
                 .setContentTitle(mFinishedNotificationTitleString)
                 .setContentText(getString(R.string.notification_view))
                 .setSmallIcon(getFinishedIconDrawable())
@@ -317,6 +357,29 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
         if (mNotificationShowing) {
             // Only actually call build if it's showing
             mNotificationManager.notify(mProgressNotificationId, mProgressNotificationBuilder.build());
+        }
+    }
+
+    /**
+     * Oreo devices and higher require notifications to be placed in a "Channel" so that users can
+     * tweak similar notifications settings.
+     * Details here: https://developer.android.com/guide/topics/ui/notifiers/notifications.html
+     * <p>
+     * Here we create a "Default notifications" channel for the app if it doesn't exist.
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createChannel() {
+        final boolean exists = mNotificationManager.getNotificationChannel(DEFAULT_NOTIFICATION_CHANNEL_ID) != null;
+        if (!exists) {
+            final CharSequence name = getString(getNotificationChannelName());
+            final String description = getString(getNotificationChannelDescription());
+            final int importance = NotificationManager.IMPORTANCE_HIGH;
+            final NotificationChannel channel = new NotificationChannel(DEFAULT_NOTIFICATION_CHANNEL_ID,
+                                                                        name,
+                                                                        importance);
+            channel.setDescription(description);
+            channel.setShowBadge(true);
+            mNotificationManager.createNotificationChannel(channel);
         }
     }
     // </editor-fold>
