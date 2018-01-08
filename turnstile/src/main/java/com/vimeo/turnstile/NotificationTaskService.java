@@ -48,8 +48,6 @@ import android.support.annotation.StringRes;
  */
 public abstract class NotificationTaskService<T extends BaseTask> extends BaseTaskService<T> {
 
-    private static final String DEFAULT_NOTIFICATION_CHANNEL_ID = "turnstile_notification_channel";
-
     /**
      * Unique id for the notification. We use it on notification start and to cancel it.
      */
@@ -149,6 +147,17 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
      */
     @PluralsRes
     protected abstract int getProgressNotificationTitleStringRes();
+
+    /**
+     * The notification channel ID.
+     * Starting with Android Oreo, all notification must be grouped into channels,
+     * allowing the user to customize notification at a more granular level.
+     * This value must be unique to the application.
+     * It is not seen by the end user.
+     *
+     * @return the string resource for the notification channel ID.
+     */
+    protected abstract String getNotificationChannelId();
 
     /**
      * The notification channel name.
@@ -262,7 +271,7 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
     protected void setupNotification() {
         if (VERSION.SDK_INT >= VERSION_CODES.O) {
             createChannel();
-            mProgressNotificationBuilder = new Builder(this, DEFAULT_NOTIFICATION_CHANNEL_ID);
+            mProgressNotificationBuilder = new Builder(this, getNotificationChannelId());
         } else {
             mProgressNotificationBuilder = new Builder(this);
         }
@@ -321,7 +330,7 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
         final Notification.Builder builder;
         if (VERSION.SDK_INT >= VERSION_CODES.O) {
             createChannel();
-            builder = new Builder(this, DEFAULT_NOTIFICATION_CHANNEL_ID);
+            builder = new Builder(this, getNotificationChannelId());
         } else {
             builder = new Builder(this);
         }
@@ -375,12 +384,12 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
      */
     @RequiresApi(Build.VERSION_CODES.O)
     private void createChannel() {
-        final boolean exists = mNotificationManager.getNotificationChannel(DEFAULT_NOTIFICATION_CHANNEL_ID) != null;
+        final boolean exists = mNotificationManager.getNotificationChannel(getNotificationChannelId()) != null;
         if (!exists) {
             final CharSequence name = getString(getNotificationChannelName());
             final String description = getString(getNotificationChannelDescription());
             final int importance = NotificationManager.IMPORTANCE_HIGH;
-            final NotificationChannel channel = new NotificationChannel(DEFAULT_NOTIFICATION_CHANNEL_ID,
+            final NotificationChannel channel = new NotificationChannel(getNotificationChannelId(),
                                                                         name,
                                                                         importance);
             channel.setDescription(description);
@@ -388,5 +397,6 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
             mNotificationManager.createNotificationChannel(channel);
         }
     }
+
     // </editor-fold>
 }
