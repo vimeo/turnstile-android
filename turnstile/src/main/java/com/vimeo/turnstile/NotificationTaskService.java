@@ -279,6 +279,7 @@ public abstract class NotificationTaskService<T extends BaseTask> extends BaseTa
         mProgressNotificationBuilder
                 .setSmallIcon(getProgressIconDrawable())
                 .setTicker(getString(R.string.notification_started))
+                .setOnlyAlertOnce(true)
                 .setProgress(100, 0, true)
                 // Example: "Uploading video"
                 .setContentTitle(getProgressNotificationString())
