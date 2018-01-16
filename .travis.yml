@@ -11,8 +11,8 @@ android:
   - extra-android-m2repository
   - extra-google-google_play_services
   - extra-google-m2repository
-install:
-  - echo yes | sdkmanager --install "platforms;android-27" "tools" "build-tools;27.0.3" "extras;android;m2repository" "extras;google;m2repository" "extras;google;google_play_services"
+before_install:
+  - yes | sdkmanager "platforms;android-27"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
