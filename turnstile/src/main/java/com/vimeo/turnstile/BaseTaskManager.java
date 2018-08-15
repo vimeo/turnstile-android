@@ -723,10 +723,14 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         }
     }
 
-    private static void pauseAll() {
+    private void pauseAll() {
         // Issues interrupts to all threads
-        for (Future future : sTaskPool.values()) {
-            future.cancel(true);
+        for (Map.Entry<String,Future> entry : sTaskPool.entrySet()){
+            T task = getTask(entry.getKey());
+            if(task != null){
+                broadcastTaskEvent(task, TaskConstants.EVENT_PAUSED);
+            }
+            entry.getValue().cancel(true);
         }
         sTaskPool.clear();
     }
@@ -959,6 +963,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         public void onStarted(@NonNull T task) {
         }
 
+        public void onPaused(@NonNull T task) {
+        }
+
         public void onProgress(@NonNull T task, int progress) {
         }
 
@@ -1067,6 +1074,9 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
                             break;
                         case TaskConstants.EVENT_CANCELLED:
                             listener.onCanceled(task);
+                            break;
+                        case TaskConstants.EVENT_PAUSED:
+                            listener.onPaused(task);
                             break;
                         default:
                             listener.onAdditionalTaskEvent(task, event);
