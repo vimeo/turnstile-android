@@ -80,6 +80,8 @@ public abstract class BaseTask implements Serializable, Callable {
 
         abstract void onTaskStarted(@NonNull T task);
 
+        abstract void onTaskPaused(@NonNull T task);
+
         abstract void onTaskStateChange(@NonNull T task);
 
         abstract void onTaskCompleted(@NonNull T task);
@@ -92,6 +94,13 @@ public abstract class BaseTask implements Serializable, Callable {
             T safeTask = getFrom(task);
             if (safeTask != null) {
                 onTaskStarted(safeTask);
+            }
+        }
+
+        public final void notifyOnTaskPaused(@NonNull BaseTask task) {
+            T safeTask = getFrom(task);
+            if (safeTask != null) {
+                onTaskPaused(safeTask);
             }
         }
 
@@ -293,6 +302,9 @@ public abstract class BaseTask implements Serializable, Callable {
         } else {
             TaskLogger.getLogger().d("Task Started For First Time " + mId);
             execute();
+        }
+        if (mState != TaskState.COMPLETE && mState != TaskState.ERROR && mStateListener != null) {
+            mStateListener.notifyOnTaskPaused(this);
         }
         mIsRunning = false;
         return null;
