@@ -370,11 +370,6 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         }
 
         @Override
-        void onTaskPaused(@NonNull T task) {
-            broadcastTaskEvent(task, TaskConstants.EVENT_PAUSED);
-        }
-
-        @Override
         public void onTaskStateChange(@NonNull T task) {
             mTaskCache.upsert(task);
             // After a retry, lets make sure the service is running
@@ -728,10 +723,14 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         }
     }
 
-    private static void pauseAll() {
+    private void pauseAll() {
         // Issues interrupts to all threads
-        for (Future future : sTaskPool.values()) {
-            future.cancel(true);
+        for (Map.Entry<String,Future> entry : sTaskPool.entrySet()){
+            T task = getTask(entry.getKey());
+            if(task != null){
+                broadcastTaskEvent(task, TaskConstants.EVENT_PAUSED);
+            }
+            entry.getValue().cancel(true);
         }
         sTaskPool.clear();
     }
