@@ -49,7 +49,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -745,14 +744,13 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
             return false;
         }
         isResuming = true;
-        
-        for (Entry<String, Future> element : sTaskPool.entrySet()) {
-            String taskId = element.getKey();
-            if (!isQueued(taskId)) {
-                removeFromTaskPool(taskId);
-            }
+        // Only resume for network if the tasks aren't paused and it's not in the process of resuming
+        // Issues interrupts to all threads
+        for (Future future : sTaskPool.values()) {
+            future.cancel(true);
         }
-
+        // Clear the task pool because all the necessary tasks will be re-added
+        sTaskPool.clear();
         // TODO: iterate through all threads with the task id and stop them 11/5/15 [KV]
         // I've seen threads survive the service dying
         // http://stackoverflow.com/questions/6667496/get-reference-to-thread-object-from-its-id

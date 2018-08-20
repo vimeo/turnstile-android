@@ -303,6 +303,7 @@ public abstract class BaseTask implements Serializable, Callable {
             TaskLogger.getLogger().d("Task Started For First Time " + mId);
             execute();
         }
+        TaskLogger.getLogger().e("Task State after execute:" + mState.name());
         if (!isComplete() && !isError() && mStateListener != null) {
             mStateListener.notifyOnTaskPaused(this);
         }
