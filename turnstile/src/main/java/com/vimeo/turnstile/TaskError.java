@@ -92,7 +92,13 @@ public class TaskError implements Serializable {
             String domain = jsonObject.getString(DOMAIN);
             int code = jsonObject.getInt(CODE);
             String message = jsonObject.getString(MESSAGE);
-            Exception exception = (Exception) jsonObject.opt(EXCEPTION);
+            Exception exception = null;
+            try {
+                exception = (Exception) jsonObject.opt(EXCEPTION);
+            } catch (ClassCastException classCastException) {
+                TaskLogger.getLogger().e("Unable to deserialize exception on TaskError: "
+                                         + classCastException.getMessage());
+            }
 
             return new TaskError(domain, code, message, exception);
         }
