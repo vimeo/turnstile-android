@@ -78,7 +78,11 @@ public class TaskError implements Serializable {
                 jsonObject.put(DOMAIN, object.mDomain);
                 jsonObject.put(CODE, object.mCode);
                 jsonObject.put(MESSAGE, object.mMessage);
-                jsonObject.put(EXCEPTION, object.mException);
+
+                Exception exception = object.mException;
+                if (exception != null) {
+                    jsonObject.put(EXCEPTION, exception.getMessage());
+                }
             } catch (JSONException e) {
                 TaskLogger.getLogger().e("Unable to serialize json object", e);
             }
@@ -92,12 +96,15 @@ public class TaskError implements Serializable {
             String domain = jsonObject.getString(DOMAIN);
             int code = jsonObject.getInt(CODE);
             String message = jsonObject.getString(MESSAGE);
+
             Exception exception = null;
-            try {
-                exception = (Exception) jsonObject.opt(EXCEPTION);
-            } catch (ClassCastException classCastException) {
-                TaskLogger.getLogger().e("Unable to deserialize exception on TaskError: "
-                                         + classCastException.getMessage());
+            String exceptionMessage = jsonObject.optString(EXCEPTION);
+            // The previous iteration was storing Exception#toString() into this field, so
+            // it's possible we'll be pulling out not just the Exception#getMessage(), but
+            // rather the result of toString. This could cause something like:
+            // `java.lang.Exception: java.lang.Exception: ` in our logs.
+            if (exceptionMessage != null) {
+                exception = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ",""));
             }
 
             return new TaskError(domain, code, message, exception);
