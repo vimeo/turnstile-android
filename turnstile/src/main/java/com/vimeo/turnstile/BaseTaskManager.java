@@ -1089,8 +1089,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
                         case TaskConstants.EVENT_SUCCESS:
                             listener.onSuccess(task);
                             break;
-                        case TaskConstants.EVENT_MANAGER_RETRY:
+                        case TaskConstants.EVENT_RETRY:
                             listener.onRetry(task);
+                            break;
+                        case TaskConstants.EVENT_MANAGER_RETRY:
+                            listener.onManagerRetry(task);
                             break;
                         case TaskConstants.EVENT_ADDED:
                             listener.onAdded(task);
