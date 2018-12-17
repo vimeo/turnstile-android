@@ -103,8 +103,9 @@ public class TaskError implements Serializable {
             // it's possible we'll be pulling out not just the Exception#getMessage(), but
             // rather the result of toString. This could cause something like:
             // `java.lang.Exception: java.lang.Exception: ` in our logs.
+            // This is accounted for in the TaskError constructor.
             if (exceptionMessage != null) {
-                exception = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ",""));
+                exception = new Exception(exceptionMessage);
             }
 
             return new TaskError(domain, code, message, exception);
@@ -129,7 +130,9 @@ public class TaskError implements Serializable {
         this(domain, code, message, null);
     }
 
-    public TaskError(@NonNull String domain, int code, @NonNull String message,
+    public TaskError(@NonNull String domain,
+                     int code,
+                     @NonNull String message,
                      @Nullable Throwable exception) {
         mDomain = domain;
         mCode = code;
@@ -169,11 +172,22 @@ public class TaskError implements Serializable {
         return mException;
     }
 
+    /**
+     * Convert the Throwable to an {@link Exception}. There have been issues
+     * with exception serialization and deserialization.
+     *
+     * A longer term solution will be moving away from holding an Exception at all.
+     */
     public void setException(@Nullable Throwable exception) {
         if (exception == null) {
             mException = null;
         } else {
-            mException = new Exception(exception);
+            String exceptionMessage = exception.getMessage();
+            if (exceptionMessage != null) {
+                // replaceAll() so that we don't have more than one layer of nesting (this could happen
+                // with deserialization).
+                mException = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ", ""));
+            }
         }
     }
     // </editor-fold>
