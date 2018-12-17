@@ -370,6 +370,11 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         }
 
         @Override
+        void onTaskRetry(@NonNull T task) {
+            broadcastTaskEvent(task, TaskConstants.EVENT_RETRY);
+        }
+
+        @Override
         public void onTaskStateChange(@NonNull T task) {
             mTaskCache.upsert(task);
             // After a retry, lets make sure the service is running
@@ -626,7 +631,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         T task = mTaskCache.get(taskId);
 
         if (task != null) {
-            broadcastTaskEvent(task, TaskConstants.EVENT_RETRYING);
+            broadcastTaskEvent(task, TaskConstants.EVENT_MANAGER_RETRY);
             TaskLogger.getLogger().d("Retrying task with id: " + taskId);
             // Run the task again
             task.updateStateForRetry();
@@ -978,7 +983,25 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
         public void onFailure(@NonNull T task, @NonNull TaskError error) {
         }
 
+        /**
+         * Called anytime the task is retried (either automatically by the system or
+         * manually by an external consumer).
+         *
+         * For only manual retries, see {@link #onManagerRetry(Object)}
+         *
+         * @see BaseTask#updateStateForRetry()
+         */
         public void onRetry(@NonNull T task) {
+        }
+
+        /**
+         * Called when a task was told to retry by the manager (an external retry).
+         *
+         * For automatic retry event, see {@link #onRetry(Object)}
+         *
+         * @see BaseTaskManager#retryTask(String)
+         */
+        public void onManagerRetry(@NonNull T task) {
         }
 
         public void onAdditionalTaskEvent(@NonNull T task, @NonNull String event) {
@@ -1066,7 +1089,7 @@ public abstract class BaseTaskManager<T extends BaseTask> implements Conditions.
                         case TaskConstants.EVENT_SUCCESS:
                             listener.onSuccess(task);
                             break;
-                        case TaskConstants.EVENT_RETRYING:
+                        case TaskConstants.EVENT_MANAGER_RETRY:
                             listener.onRetry(task);
                             break;
                         case TaskConstants.EVENT_ADDED:
