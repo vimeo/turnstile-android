@@ -175,19 +175,21 @@ public class TaskError implements Serializable {
     /**
      * Convert the Throwable to an {@link Exception}. There have been issues
      * with exception serialization and deserialization.
-     *
+     * <p>
      * A longer term solution will be moving away from holding an Exception at all.
      */
-    public void setException(@Nullable Throwable exception) {
+    public void setException(@Nullable final Throwable exception) {
         if (exception == null) {
             mException = null;
         } else {
             String exceptionMessage = exception.getMessage();
-            if (exceptionMessage != null) {
-                // replaceAll() so that we don't have more than one layer of nesting (this could happen
-                // with deserialization).
-                mException = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ", ""));
+            if (exceptionMessage == null || exception.getClass() == null || exception.getClass().getName() == null) {
+                return;
             }
+            exceptionMessage = exception.getClass().getName() + ": " + exceptionMessage;
+            // replaceAll() so that we don't have more than one layer of nesting (this could happen
+            // with deserialization).
+            mException = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ", ""));
         }
     }
     // </editor-fold>
