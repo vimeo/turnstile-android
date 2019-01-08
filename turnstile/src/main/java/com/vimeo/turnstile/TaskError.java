@@ -78,7 +78,11 @@ public class TaskError implements Serializable {
                 jsonObject.put(DOMAIN, object.mDomain);
                 jsonObject.put(CODE, object.mCode);
                 jsonObject.put(MESSAGE, object.mMessage);
-                jsonObject.put(EXCEPTION, object.mException);
+
+                Exception exception = object.mException;
+                if (exception != null) {
+                    jsonObject.put(EXCEPTION, exception.getMessage());
+                }
             } catch (JSONException e) {
                 TaskLogger.getLogger().e("Unable to serialize json object", e);
             }
@@ -92,7 +96,17 @@ public class TaskError implements Serializable {
             String domain = jsonObject.getString(DOMAIN);
             int code = jsonObject.getInt(CODE);
             String message = jsonObject.getString(MESSAGE);
-            Exception exception = (Exception) jsonObject.opt(EXCEPTION);
+
+            Exception exception = null;
+            String exceptionMessage = jsonObject.optString(EXCEPTION);
+            // The previous iteration was storing Exception#toString() into this field, so
+            // it's possible we'll be pulling out not just the Exception#getMessage(), but
+            // rather the result of toString. This could cause something like:
+            // `java.lang.Exception: java.lang.Exception: ` in our logs.
+            // This is accounted for in the TaskError constructor.
+            if (exceptionMessage != null) {
+                exception = new Exception(exceptionMessage);
+            }
 
             return new TaskError(domain, code, message, exception);
         }
@@ -116,7 +130,9 @@ public class TaskError implements Serializable {
         this(domain, code, message, null);
     }
 
-    public TaskError(@NonNull String domain, int code, @NonNull String message,
+    public TaskError(@NonNull String domain,
+                     int code,
+                     @NonNull String message,
                      @Nullable Throwable exception) {
         mDomain = domain;
         mCode = code;
@@ -156,11 +172,24 @@ public class TaskError implements Serializable {
         return mException;
     }
 
-    public void setException(@Nullable Throwable exception) {
+    /**
+     * Convert the Throwable to an {@link Exception}. There have been issues
+     * with exception serialization and deserialization.
+     * <p>
+     * A longer term solution will be moving away from holding an Exception at all.
+     */
+    public void setException(@Nullable final Throwable exception) {
         if (exception == null) {
             mException = null;
         } else {
-            mException = new Exception(exception);
+            String exceptionMessage = exception.getMessage();
+            if (exceptionMessage == null || exception.getClass() == null || exception.getClass().getName() == null) {
+                return;
+            }
+            exceptionMessage = exception.getClass().getName() + ": " + exceptionMessage;
+            // replaceAll() so that we don't have more than one layer of nesting (this could happen
+            // with deserialization).
+            mException = new Exception(exceptionMessage.replaceAll("java.lang.Exception: ", ""));
         }
     }
     // </editor-fold>

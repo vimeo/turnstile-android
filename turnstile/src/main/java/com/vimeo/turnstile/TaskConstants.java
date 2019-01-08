@@ -46,7 +46,7 @@ final class TaskConstants {
     // ---- Broadcast Events ----
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
-            EVENT_PROGRESS, EVENT_SUCCESS, EVENT_FAILURE, EVENT_RETRYING, EVENT_ADDED, EVENT_CANCELLED,
+            EVENT_PROGRESS, EVENT_SUCCESS, EVENT_FAILURE, EVENT_RETRY, EVENT_MANAGER_RETRY, EVENT_ADDED, EVENT_CANCELLED,
             EVENT_STARTED, EVENT_PAUSED
     })
     public @interface TaskEvent {}
@@ -61,7 +61,8 @@ final class TaskConstants {
     public static final String EVENT_PROGRESS = "EVENT_PROGRESS";
     public static final String EVENT_SUCCESS = "EVENT_SUCCESS";
     public static final String EVENT_FAILURE = "EVENT_FAILURE";
-    public static final String EVENT_RETRYING = "EVENT_RETRYING";
+    public static final String EVENT_RETRY = "EVENT_RETRY";
+    public static final String EVENT_MANAGER_RETRY = "EVENT_MANAGER_RETRY";
     public static final String EVENT_ADDED = "EVENT_ADDED";
     public static final String EVENT_STARTED = "EVENT_STARTED";
     public static final String EVENT_CANCELLED = "EVENT_CANCELLED";

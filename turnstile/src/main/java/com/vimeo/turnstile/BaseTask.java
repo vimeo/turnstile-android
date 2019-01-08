@@ -80,6 +80,8 @@ public abstract class BaseTask implements Serializable, Callable {
 
         abstract void onTaskStarted(@NonNull T task);
 
+        abstract void onTaskRetry(@NonNull T task);
+
         abstract void onTaskStateChange(@NonNull T task);
 
         abstract void onTaskCompleted(@NonNull T task);
@@ -92,6 +94,13 @@ public abstract class BaseTask implements Serializable, Callable {
             T safeTask = getFrom(task);
             if (safeTask != null) {
                 onTaskStarted(safeTask);
+            }
+        }
+
+        public final void notifyOnTaskRetry(@NonNull BaseTask task) {
+            T safeTask = getFrom(task);
+            if (safeTask != null) {
+                onTaskRetry(safeTask);
             }
         }
 
@@ -280,6 +289,7 @@ public abstract class BaseTask implements Serializable, Callable {
      */
     @WorkerThread
     protected void retry() {
+        updateStateForRetry();
         execute();
     }
 
@@ -360,6 +370,7 @@ public abstract class BaseTask implements Serializable, Callable {
      * Marks task as ready and removes any errors. This happens when we are attempting a retry.
      */
     protected void updateStateForRetry() {
+        onTaskRetry();
         if (mState == TaskState.ERROR) {
             // If there's an error, remove it to prep the task for retry
             mState = TaskState.READY;
@@ -375,6 +386,19 @@ public abstract class BaseTask implements Serializable, Callable {
     private void onTaskStarted() {
         if (mStateListener != null) {
             mStateListener.notifyOnTaskStarted(this);
+        }
+    }
+
+    /**
+     * Notify listeners that the task has initiated a retry.
+     * Should be called by the implementation of
+     * BaseTask when the task initiates a retry. External retries
+     * initiated by the manager are already reported, so this
+     * event is just for retries internal to the task.
+     */
+    private void onTaskRetry() {
+        if (mStateListener != null) {
+            mStateListener.notifyOnTaskRetry(this);
         }
     }
 

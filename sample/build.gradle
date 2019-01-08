@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
         applicationId "com.vimeo.sample"
@@ -24,7 +24,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:27.0.2'
+    implementation 'com.android.support:appcompat-v7:27.0.2'
 
-    compile project(':turnstile')
+    implementation project(':turnstile')
 }
