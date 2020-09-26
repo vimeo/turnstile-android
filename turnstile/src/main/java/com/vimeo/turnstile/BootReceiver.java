@@ -27,7 +27,7 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.RequiresPermission;
+import androidx.annotation.RequiresPermission;
 
 import com.vimeo.turnstile.utils.BootPreferences;
 import com.vimeo.turnstile.utils.TaskLogger;

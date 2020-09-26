@@ -2,7 +2,7 @@ package com.vimeo.turnstile;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Posts Runnables to the main thread.

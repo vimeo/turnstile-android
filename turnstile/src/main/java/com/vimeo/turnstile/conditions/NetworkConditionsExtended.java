@@ -27,7 +27,7 @@ import android.Manifest.permission;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.support.annotation.RequiresPermission;
+import androidx.annotation.RequiresPermission;
 
 import com.vimeo.turnstile.utils.TaskLogger;
 import com.vimeo.turnstile.TaskPreferences;

@@ -23,7 +23,7 @@
  */
 package com.vimeo.turnstile.database;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * General purpose callback interface to

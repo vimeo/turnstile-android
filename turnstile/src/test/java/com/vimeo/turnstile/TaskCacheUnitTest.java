@@ -23,7 +23,7 @@
  */
 package com.vimeo.turnstile;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.vimeo.turnstile.database.TaskCache;
 import com.vimeo.turnstile.database.TaskCallback;

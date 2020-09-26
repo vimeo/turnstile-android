@@ -24,10 +24,10 @@
 package com.vimeo.turnstile;
 
 import android.content.Context;
-import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
+import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 
 import com.vimeo.turnstile.conditions.Conditions;
 import com.vimeo.turnstile.utils.TaskLogger;

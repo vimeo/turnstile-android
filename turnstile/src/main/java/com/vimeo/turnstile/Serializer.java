@@ -23,7 +23,7 @@
  */
 package com.vimeo.turnstile;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * Interface that defines the spec for serializing

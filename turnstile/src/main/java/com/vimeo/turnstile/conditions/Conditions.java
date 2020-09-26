@@ -1,6 +1,6 @@
 package com.vimeo.turnstile.conditions;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /**
  * An interface that determines whether the conditions to

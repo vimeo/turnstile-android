@@ -1,6 +1,6 @@
 package com.vimeo.turnstile.utils;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
 import com.vimeo.turnstile.BaseTask;
